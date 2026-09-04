@@ -25,7 +25,7 @@
   .screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: #fff; display: flex; flex-direction: column; transition: transform 0.3s ease; }
   .screen.hidden { transform: translateX(100%); }
   .screen.active { transform: translateX(0); }
-  .screen-content { flex: 1; overflow-y: auto; padding: 16px; }
+  .screen-content { flex: 1; overflow-y: auto; padding: 16px 16px calc(34px + env(safe-area-inset-bottom)); } /* OTR v33 / OSR v44 parent fix carried */
 
   /* Home */
   .home-hero { background:linear-gradient(rgba(7,26,18,0.0),rgba(7,26,18,0.0)),radial-gradient(120% 90% at 78% 8%, rgba(57,255,176,.20), transparent 55%),radial-gradient(130% 100% at 12% 96%, rgba(15,110,86,.55), transparent 60%),#071a12; padding:0; margin:0; text-align:center; position:relative; }
@@ -1741,7 +1741,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.04-1";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.04-2";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
@@ -7966,7 +7966,13 @@ async function clRemove(id, label){
   <div class="mk-ov" id="mkOv"><div class="mk-sheet" id="mkSheet"></div></div>
 </div>
 
-<style id="obrCss">button[onclick^="umpireFromEntry"],button[onclick^="mkOpen"]{display:none!important}</style>
+<style id="obrCss">
+button[onclick^="umpireFromEntry"],button[onclick^="mkOpen"]{display:none!important}
+#entryContent select,#entryContent input[type=date],#entryContent input[type=number]{font-size:18px;padding:14px;min-height:52px;border-radius:10px;}
+#entryContent .field label{font-size:14px;}
+#entryContent .player-pick{font-size:18px!important;padding:16px!important;min-height:56px;}
+#entryContent .btn-primary,#entryContent .btn-success{font-size:17px;padding:16px;}
+</style>
 <script id="obrEntry">
 // ============================================================================
 //  OBR BOWLS ENTRY (OBR v1 · 2026-09-04). Additive redefinition block — the OTR
@@ -8148,12 +8154,17 @@ function renderStep4(){
       <div style="font-size:13px;font-weight:700;color:#0F6E56;margin-bottom:10px;">🔐 Verify Submission</div>
       <div class="field" style="margin-bottom:10px;"><label>Who are you?</label>
         <select id="submitterName" style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;"><option value="">Select your name...</option>${opts}</select></div>
-      <div class="field" style="margin-bottom:0;"><label>PIN (only if you have one)</label>
-        <input type="password" id="submitterPin" inputmode="numeric" placeholder="optional" style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;"></div>
+      <div class="field" style="margin-bottom:0;">
+        <!-- Player PIN hidden (not required to submit) — family pattern -->
+        <input type="hidden" id="submitterPin" value="">
+        <div style="font-size:11px;color:#5aa98d;margin-top:6px;">A club admin can use the club admin code to enter on anyone's behalf.</div>
+      </div>
     </div>
     <div id="err4" class="error-msg"></div>
-    <button class="btn btn-primary" id="submitBtn" onclick="submitMatch()">\u2713 Submit Match</button>
-    <button class="btn btn-secondary" style="margin-top:8px;" onclick="renderStep3()">&larr; Back</button>`;
+    <div class="nav-row" style="margin-top:12px;">
+      <button class="btn btn-secondary" onclick="renderStep3()">&larr; Back</button>
+      <button class="btn btn-success" id="submitBtn" onclick="submitMatch()">&#10003; Submit Match</button>
+    </div>`;
 }
 async function _submitMatchInner(){
   const submitter=document.getElementById('submitterName').value, err=document.getElementById('err4');
@@ -8210,6 +8221,58 @@ async function doSubmit(btn){
     <button class="btn btn-secondary" style="margin-top:8px;" onclick="goHome()">Back to Home</button>`;
   setStep(0);
   if(typeof loadRecent==='function') try{ loadRecent(); }catch(e){}
+}
+
+// ---- OBR RECENT MATCHES: bowls-aware (all names, shots not weight, peel/start shown) ----
+async function loadRecent(){
+  try{
+    const data = await sbGet(`obr_matches?select=match_date,match_type,event,match_format,t1p1,t1p2,t1p3,t1p4,t2p1,t2p2,t2p3,t2p4,t1_sets,t2_sets,t1_games,t2_games,ends,peel,handicap_shots,handicap_to,submitted_by&order=match_date.desc,id.desc&limit=15&club_id=eq.${CLUB_ID}`);
+    recentMatchesData = data||[];
+    if(recentMatchesData.length===0){document.getElementById('homeRecentList').innerHTML='<div style="color:#888;font-size:12px;">No matches yet</div>';return;}
+    renderRecentList();
+  }catch(e){document.getElementById('homeRecentList').innerHTML='<div style="color:#888;font-size:12px;">Could not load: '+(e.message||e)+'</div>';}
+  try{
+    const hct = await sbGet(`obr_tournaments?select=name&club_id=eq.${CLUB_ID}&handicap=eq.true&limit=1`);
+    if(hct && hct.length){ const w=document.getElementById('homeHcWrap'); if(w) w.style.display=''; }
+  }catch(e){}
+}
+function obrSideNames(m,side){ return [1,2,3,4].map(i=>m[side+'p'+i]).filter(Boolean); }
+function obrTag(ev){
+  const e=(ev||'').trim().toLowerCase();
+  const pill=(t,bg,fg)=>'<span style="background:'+bg+';color:'+fg+';font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;margin-left:4px;">'+t+'</span>';
+  if(e==='tabs-in'||e==='social') return pill('S','#ccc','#333');
+  if(e==='roll-up') return pill('R','#eee','#777');
+  if(e==='club comp'||e==='league') return pill('C','#0E3058','#fff');
+  if(e==='ladder match') return pill('L','#c4e000','#2a3000');
+  return pill('T','#0F6E56','#fff');
+}
+function renderRecentList(){
+  document.getElementById('homeRecentList').innerHTML=recentMatchesData.map((m,idx)=>{
+    const A=obrSideNames(m,'t1'), B=obrSideNames(m,'t2');
+    const aWin=(m.t1_games||0)>(m.t2_games||0), bWin=(m.t2_games||0)>(m.t1_games||0);
+    const nm=(arr,win)=>'<strong style="color:'+(win?'#0F6E56':'#333')+';">'+arr.join(' · ')+(win?' ✓':'')+'</strong>';
+    const score=(m.peel?'<span style="color:#B9770E;font-weight:800;">'+m.t1_games+'–'+m.t2_games+' peel</span>':(m.t1_games||0)+'–'+(m.t2_games||0));
+    return `
+    <div class="recent-item" onclick="toggleRecent(${idx})" id="recent_${idx}">
+      <div class="match-header">
+        <span class="match-date">${m.match_date||''}</span>
+        <span class="match-type">${m.match_type||''}</span><span style="color:#888;font-size:11px;margin-left:4px;">${m.match_format||''}</span>${obrTag(m.event)}
+        <span style="color:#0F6E56;font-size:11px;">▼</span>
+      </div>
+      <div class="match-teams" style="line-height:1.5;">${nm(A,aWin)}<div style="font-size:13px;color:#555;">${score} shots</div>${nm(B,bWin)}</div>
+      <div class="match-detail" id="detail_${idx}" style="display:none;margin-top:6px;padding-top:6px;border-top:1px solid rgba(15,110,86,.30);"></div>
+    </div>`;}).join('');
+}
+async function toggleRecent(idx){
+  const detail=document.getElementById('detail_'+idx);
+  const arrow=document.getElementById('recent_'+idx).querySelector('span:last-child');
+  if(detail.style.display==='none'){
+    const m=recentMatchesData[idx]; detail.style.display='block'; arrow.textContent='▲';
+    const W=Math.max(m.t1_sets||0,m.t2_sets||0);
+    const wTxt=W===0?'Roll-up — not rated':(W===1?'Tabs-in weight':'Full competition weight');
+    const hc=m.handicap_shots?(' · start +'+m.handicap_shots+' to '+(m.handicap_to==='t1'?'Side A':'Side B')+' (scratch shown)'):'';
+    detail.innerHTML=`<div style="font-size:11px;color:#888;text-align:center;">${m.event||''}${m.ends?' · '+m.ends+' ends':''} · ${wTxt}${hc}${m.submitted_by?' · entered by '+m.submitted_by:''}</div>`;
+  } else { detail.style.display='none'; arrow.textContent='▼'; }
 }
 
 </script>
