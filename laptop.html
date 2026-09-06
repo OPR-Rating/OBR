@@ -563,7 +563,7 @@
       </div>
     </div>
     <div class="screen-content home-content">
-      <button class="btn-enter" onclick="showScreen('entryScreen')">✚ Enter your match score here</button>
+      <button class="btn-enter" onclick="showScreen('entryScreen')">📋 Scorecard — set up a game or enter a result</button>
       <div class="menu-grid">
         <button class="menu-btn" onclick="showScreen('laddersScreen')">Current Ratings and Ladders</button>
         <button class="menu-btn" onclick="showProfileSearch()">Member Profile</button>
@@ -1740,7 +1740,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.06-15";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.06-17";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
@@ -8015,9 +8015,9 @@ function obrSlots(side){ const n=OBR_FORMATS[entryData.format||'fours'].n; retur
 function obrNames(side){ return obrSlots(side).map(id=>entryData[id]).filter(Boolean); }
 function obrSideLabel(side){ return obrNames(side).join(' · '); }
 
-async function renderStep1(){
+async function renderSetup(mode){
   setStep(1);
-  entryData={}; window._ladderTeams=null; window._ladderCat=null; window._ladderEligible=null; window._eventDivs=null;
+  entryData={mode:mode||'result'}; window._ladderTeams=null; window._ladderCat=null; window._ladderEligible=null; window._eventDivs=null;
   const today=new Date().toISOString().split('T')[0];
   document.getElementById('entryContent').innerHTML=`
     <div class="field"><label>Event / class</label>
@@ -8038,8 +8038,51 @@ async function renderStep1(){
     </div>
     <div class="field" id="endsField"><label>Ends played</label><input type="number" id="matchEnds" min="1" max="30" inputmode="numeric" value="21"></div>
     <div id="err1" class="error-msg">Please fill in all fields.</div>
-    <button class="btn btn-primary" onclick="step1Next()">Next: Pick the names &rarr;</button>`;
+    <button class="btn btn-primary" onclick="step1Next()">Next: Pick the names &rarr;</button>
+    <button class="btn btn-secondary" style="margin-top:8px;" onclick="renderStep1()">&larr; Back</button>`;
   loadActiveTournaments();
+}
+// ---- THE CARD: entry point. A game is set up BEFORE play (open a card) and scored AFTER (close it). ----
+async function renderStep1(){
+  setStep(0); entryData={};
+  document.getElementById('entryContent').innerHTML=`
+    <div class="team-card" style="cursor:pointer;" onclick="renderSetup('open')">
+      <div style="font-size:17px;font-weight:800;color:#0F6E56;">📋 Open a card — before play</div>
+      <div style="font-size:13px;color:#555;margin-top:4px;">Names in playing order, rink, class. Shows both sides' strength and, for a handicap game, the start to put on the board.</div>
+    </div>
+    <div class="team-card" style="cursor:pointer;" onclick="renderOpenCards()">
+      <div style="font-size:17px;font-weight:800;color:#0F6E56;">✅ Enter a result — on an open card</div>
+      <div style="font-size:13px;color:#555;margin-top:4px;">Pick today's card and type the two shot totals. Everything else is already on it.</div>
+      <div id="openCardCount" style="font-size:12px;color:#B9770E;margin-top:4px;"></div>
+    </div>
+    <div class="team-card" style="cursor:pointer;" onclick="renderSetup('result')">
+      <div style="font-size:17px;font-weight:800;color:#0F6E56;">✚ Enter a result — no card</div>
+      <div style="font-size:13px;color:#555;margin-top:4px;">Nobody opened a card? Enter the whole match now.</div>
+    </div>`;
+  try{ const oc=await sbGet(`obr_cards?select=id&status=eq.open&club_id=eq.${CLUB_ID}`); const el=document.getElementById('openCardCount'); if(el&&oc&&oc.length) el.textContent=oc.length+' open card'+(oc.length>1?'s':'')+' waiting for a result'; }catch(e){}
+}
+async function renderOpenCards(){
+  setStep(1); entryData={mode:'card'};
+  const box=document.getElementById('entryContent'); box.innerHTML='<div class="loading"><span class="loading-spinner">⏳</span>Loading open cards…</div>';
+  let cards=[]; try{ cards=await sbGet(`obr_cards?select=*&status=eq.open&club_id=eq.${CLUB_ID}&order=card_date.desc,rink.asc,id.asc`)||[]; }catch(e){}
+  window._obrOpenCards=cards;
+  if(!cards.length){ box.innerHTML=`<div class="empty-state"><div class="icon">📋</div><p>No open cards. Open one before play, or enter the result without a card.</p></div>
+    <button class="btn btn-primary" onclick="renderSetup('result')">✚ Enter a result without a card</button>
+    <button class="btn btn-secondary" style="margin-top:8px;" onclick="renderStep1()">&larr; Back</button>`; return; }
+  box.innerHTML=`<p class="sub" style="margin-bottom:10px;">Tap the card you played.</p>`+cards.map((c,i)=>{
+    const A=obrSideNames(c,'t1').join(' · '), B=obrSideNames(c,'t2').join(' · ');
+    const hc=c.handicap_shots?`<span class="amr-chip" style="background:#B9770E;">+${c.handicap_shots} to ${c.handicap_to==='t1'?'Side A':'Side B'}</span>`:'';
+    return `<div class="team-card" style="cursor:pointer;" onclick="obrPickCard(${i})">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="font-size:12px;color:#888;">${c.card_date}${c.rink?' · Rink '+c.rink:''} · ${c.match_type||''} ${c.match_format} · ${c.event}</div>${hc}</div>
+      <div style="font-weight:700;color:#0d4a38;margin-top:4px;">${A}</div><div style="font-size:12px;color:#888;">v</div><div style="font-weight:700;color:#0d4a38;">${B}</div>
+    </div>`; }).join('')+`<button class="btn btn-secondary" style="margin-top:8px;" onclick="renderStep1()">&larr; Back</button>`;
+}
+function obrPickCard(i){
+  const c=window._obrOpenCards[i]; if(!c) return;
+  entryData={mode:'card',_cardId:c.id,date:c.card_date,type:c.match_type,event:c.event,format:c.match_format,ends:c.ends,rink:c.rink,
+    t1p1:c.t1p1,t1p2:c.t1p2,t1p3:c.t1p3,t1p4:c.t1p4,t2p1:c.t2p1,t2p2:c.t2p2,t2p3:c.t2p3,t2p4:c.t2p4,
+    _cardHc:(c.handicap_shots||null),_cardHcTo:(c.handicap_to||null)};
+  renderStep3();
 }
 function obrFormatChange(){
   const f=document.getElementById('matchFormat').value, ef=document.getElementById('endsField'), en=document.getElementById('matchEnds');
@@ -8087,13 +8130,16 @@ function renderStep2(){
   const card=(side,label)=>`<div class="team-card"><div class="team-label"><span>${side==='t1'?1:2}</span>${label}</div>`+
     obrSlots(side).map((id,i)=>`<div class="field"><label>${pos[i]}</label>
       <input type="hidden" id="${id}_val" value="${entryData[id]||''}">
-      <button type="button" class="btn player-pick${entryData[id]?' selected':''}" id="${id}_btn" onclick="openPlayerModal('${id}','${pos[i]} — ${label}')" style="width:100%;text-align:left;padding:14px;font-size:16px;border:1.5px solid rgba(15,110,86,.3);border-radius:10px;background:#fff;"><span id="${id}_lbl">${entryData[id]||'Tap to pick…'}</span></button></div>`).join('')+`</div>`;
+      <button type="button" class="btn player-pick${entryData[id]?' selected':''}" id="${id}_btn" onclick="openPlayerModal('${id}','${pos[i]} — ${label}')" style="width:100%;text-align:left;padding:14px;font-size:16px;border:1.5px solid rgba(15,110,86,.3);border-radius:10px;background:#fff;"><span id="${id}_lbl">${entryData[id]||'Tap to pick…'}</span></button>
+      <div id="${id}_rt" style="display:none;margin:-4px 0 6px 4px;font-size:12px;color:#12855F;"></div></div>`).join('')+`<div id="${side==='t1'?'otrPrev1':'otrPrev2'}" class="pair-preview" style="display:none;"></div></div>`;
   document.getElementById('entryContent').innerHTML=`
     <p class="sub" style="margin-bottom:10px;">${n===1?'Pick both players.':'Pick each side in playing order — lead first, skip last.'}</p>
     ${card('t1','Side A')}${card('t2','Side B')}
+    <div id="obrMatchPrev" style="display:none;margin:2px 0 10px;padding:10px 12px;border-radius:10px;background:rgba(15,110,86,.08);border:1px solid rgba(15,110,86,.25);font-size:13px;color:#0d4a38;text-align:center;line-height:1.5;"></div>
     <div id="err2" class="error-msg">Every slot needs a name, and no name can appear twice.</div>
-    <button class="btn btn-primary" onclick="step2Next()">Next: Enter the shots &rarr;</button>
-    <button class="btn btn-secondary" style="margin-top:8px;" onclick="renderStep1()">&larr; Back</button>`;
+    <button class="btn btn-primary" onclick="step2Next()">${entryData.mode==='open'?'Next: Set up the card &rarr;':'Next: Enter the shots &rarr;'}</button>
+    <button class="btn btn-secondary" style="margin-top:8px;" onclick="renderSetup(entryData.mode)">&larr; Back</button>`;
+  setTimeout(()=>{ try{ otrUpdatePreview(); }catch(e){} },0);
 }
 function openPlayerModal(fieldId,label){
   _currentModalTarget=fieldId; _modalCallback=null;
@@ -8115,7 +8161,61 @@ function step2Next(){
   ids.forEach((id,i)=>entryData[id]=vals[i]);
   // null the unused family slots so nothing stale rides along
   ['t1p2','t1p3','t1p4','t2p2','t2p3','t2p4'].forEach(id=>{ if(!ids.includes(id)) entryData[id]=null; });
-  renderStep3();
+  if(entryData.mode==='open') renderCardSetup(); else renderStep3();
+}
+// ---- OPEN A CARD: rink, handicap decision (system suggestion, handicapper overrides), then save ----
+function renderCardSetup(){
+  setStep(3);
+  const R=(nm)=> (nm && OTR_RATING[nm]!=null) ? OTR_RATING[nm] : 1500;
+  const sA=_obrTeamStrength(obrNames('t1').map(R)), sB=_obrTeamStrength(obrNames('t2').map(R));
+  const E1=1/(1+Math.pow(10,(sB-sA)/250)); const sg=obrSuggestStart(sA,sB,entryData.format);
+  entryData._sA=sA; entryData._sB=sB; entryData._E1=E1; entryData._suggestStart=sg;
+  document.getElementById('entryContent').innerHTML=`
+    <div class="team-card"><div class="team-label"><span>1</span>Side A</div><div style="font-size:14px;color:#333;">${obrSideLabel('t1')}</div><div style="font-size:12px;color:#D35400;margin-top:4px;">Strength <b>${Math.round(sA)}</b> · expected <b>${Math.round(E1*100)}%</b> of the shots</div></div>
+    <div class="team-card"><div class="team-label"><span>2</span>Side B</div><div style="font-size:14px;color:#333;">${obrSideLabel('t2')}</div><div style="font-size:12px;color:#D35400;margin-top:4px;">Strength <b>${Math.round(sB)}</b> · expected <b>${Math.round((1-E1)*100)}%</b> of the shots</div></div>
+    <div class="field"><label>Rink (optional)</label><input type="number" id="cardRink" min="1" max="12" inputmode="numeric"></div>
+    <div class="team-card" style="background:rgba(185,119,14,.07);border-color:rgba(185,119,14,.35);">
+      <label style="display:flex;align-items:center;gap:10px;font-size:15px;font-weight:700;"><input type="checkbox" id="cardHcOn" onchange="document.getElementById('cardHcBox').style.display=this.checked?'':'none'" style="width:20px;height:20px;"> Handicap game — put a start on the board</label>
+      <div id="cardHcBox" style="display:none;margin-top:10px;">
+        <div style="font-size:13px;color:#0d4a38;margin-bottom:8px;">${sg.shots>0?`System suggests <b>+${sg.shots} to ${sg.to==='t1'?'Side A':'Side B'}</b> (from the rating gap, capped at the club limit).`:'Evenly matched — the system suggests no start.'} The handicapper has the final say.</div>
+        <div class="field"><label>Start shots</label><input type="number" id="cardHcShots" min="0" max="20" inputmode="numeric" value="${sg.shots||''}" style="text-align:center;"></div>
+        <div class="field"><label>Given to</label><select id="cardHcTo"><option value="t1"${sg.to==='t1'?' selected':''}>Side A</option><option value="t2"${sg.to==='t2'?' selected':''}>Side B</option></select></div>
+      </div>
+    </div>
+    <div class="field"><label>Who is opening this card?</label><select id="cardOpener" style="width:100%;"><option value="">Select your name...</option>${[...obrNames('t1'),...obrNames('t2')].map(p=>`<option value="${p}">${p}</option>`).join('')}</select></div>
+    <div id="err3" class="error-msg"></div>
+    <button class="btn btn-primary" id="openCardBtn" onclick="obrOpenCard()">📋 Open the card</button>
+    <button class="btn btn-secondary" style="margin-top:8px;" onclick="renderStep2()">&larr; Back</button>`;
+}
+async function obrOpenCard(){
+  const err=document.getElementById('err3'), btn=document.getElementById('openCardBtn');
+  const opener=document.getElementById('cardOpener').value; if(!opener){ err.textContent='Please select your name.'; err.style.display='block'; return; }
+  const hcOn=document.getElementById('cardHcOn').checked; let hc=null,hcTo=null;
+  if(hcOn){ hc=parseInt(document.getElementById('cardHcShots').value,10)||0; hcTo=document.getElementById('cardHcTo').value; if(hc<=0){ err.textContent='Enter the start shots, or untick the handicap.'; err.style.display='block'; return; } }
+  err.style.display='none'; btn.disabled=true; btn.textContent='Opening…';
+  const card={ card_date:entryData.date, match_type:entryData.type, event:entryData.event, match_format:entryData.format, ends:entryData.ends, rink:document.getElementById('cardRink').value||null,
+    t1p1:entryData.t1p1,t1p2:entryData.t1p2,t1p3:entryData.t1p3,t1p4:entryData.t1p4,t2p1:entryData.t2p1,t2p2:entryData.t2p2,t2p3:entryData.t2p3,t2p4:entryData.t2p4,
+    t1_strength:Math.round(entryData._sA), t2_strength:Math.round(entryData._sB), expected_t1:Math.round(entryData._E1*1000)/1000,
+    handicap_shots:hc, handicap_to:hcTo, handicap_suggested:(entryData._suggestStart||{}).shots||0 };
+  try{
+    const resp=await fetch(SB_URL+"/functions/v1/obr_cards",{ method:"POST", headers:{ apikey:SB_ANON, Authorization:"Bearer "+SB_ANON, "Content-Type":"application/json" }, body:JSON.stringify({ action:'open_card', club_id:CLUB_ID, submitter:opener, card }) });
+    const res=await resp.json().catch(()=>null);
+    if(!resp.ok||!res||!res.ok){ err.textContent=(res&&res.error)||('Could not open the card ('+resp.status+')'); err.style.display='block'; btn.disabled=false; btn.textContent='📋 Open the card'; return; }
+    const c=res.card;
+    document.getElementById('entryContent').innerHTML=`
+      <div class="success-icon">📋</div>
+      <div style="text-align:center;">
+        <div style="font-size:18px;font-weight:800;color:#0d4a38;">Card open${c.rink?' — Rink '+c.rink:''}</div>
+        <div style="font-size:13px;color:#555;margin-top:6px;">${obrNames('t1').join(' · ')}<br>v<br>${obrNames('t2').join(' · ')}</div>
+        ${hc?`<div style="margin:16px auto 6px;padding:16px;border-radius:14px;background:#B9770E;color:#fff;font-size:22px;font-weight:900;max-width:320px;">Put <span style="font-size:30px;">+${hc}</span> on the board<br><span style="font-size:15px;font-weight:600;">for ${hcTo==='t1'?'Side A':'Side B'}</span></div>`
+             :`<div style="margin:14px 0 6px;font-size:13px;color:#0F6E56;font-weight:700;">Scratch game — nothing on the board.</div>`}
+        <div style="font-size:12px;color:#888;">Side A expected ${Math.round(entryData._E1*100)}% of the shots · ${entryData.event} · ${entryData.format}${entryData.ends?' · '+entryData.ends+' ends':''}</div>
+        <div style="font-size:12px;color:#888;margin-top:8px;">After the game: Scorecard → <b>Enter a result — on an open card</b>, from any phone.</div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:20px;" onclick="renderSetup('open')">Open another card</button>
+      <button class="btn btn-secondary" style="margin-top:8px;" onclick="goHome()">Back to Home</button>`;
+    setStep(0);
+  }catch(e){ err.textContent='Connection problem — the card was not opened.'; err.style.display='block'; btn.disabled=false; btn.textContent='📋 Open the card'; }
 }
 function renderStep3(){
   setStep(3);
@@ -8126,16 +8226,17 @@ function renderStep3(){
     <div class="team-card"><div class="team-label"><span>2</span>Side B</div><div style="font-size:14px;color:#333;margin-bottom:8px;">${obrSideLabel('t2')}</div>
       <div class="field"><label>Shots</label><input type="number" id="shotsB" min="0" max="60" inputmode="numeric" style="font-size:28px;text-align:center;padding:12px;"></div></div>
     <div class="team-card" style="background:rgba(15,110,86,.05);">
-      <label style="display:flex;align-items:center;gap:10px;font-size:14px;"><input type="checkbox" id="hcOn" onchange="document.getElementById('hcBox').style.display=this.checked?'':'none'" style="width:18px;height:18px;"> A start was given (handicap)</label>
-      <div id="hcBox" style="display:none;margin-top:10px;">
-        <div class="field"><label>Start shots</label><input type="number" id="hcShots" min="1" max="20" inputmode="numeric" style="text-align:center;"></div>
-        <div class="field"><label>Given to</label><select id="hcTo"><option value="t1">Side A</option><option value="t2">Side B</option></select></div>
-        <div style="font-size:12px;color:#666;">Enter the shots <b>as on the board</b>. The start is taken off before rating — ratings always use the scratch score.</div>
+      ${entryData._cardId?`<div style="font-size:12px;color:#888;margin-bottom:6px;">Card${entryData.rink?' · Rink '+entryData.rink:''} · ${entryData.event}${entryData._cardHc?` · start +${entryData._cardHc} to ${entryData._cardHcTo==='t1'?'Side A':'Side B'} was on the board`:' · scratch game'}</div>`:''}
+      <label style="display:flex;align-items:center;gap:10px;font-size:14px;"><input type="checkbox" id="hcOn" ${entryData._cardHc?'checked':''} onchange="document.getElementById('hcBox').style.display=this.checked?'':'none'; if(this.checked&&entryData._suggestStart&&entryData._suggestStart.shots>0){ const sg=entryData._suggestStart; if(!document.getElementById('hcShots').value){ document.getElementById('hcShots').value=sg.shots; document.getElementById('hcTo').value=sg.to; } }" style="width:18px;height:18px;"> A start was given (handicap)</label>
+      <div id="hcBox" style="display:${entryData._cardHc?'':'none'};margin-top:10px;">
+        <div class="field"><label>Start shots</label><input type="number" id="hcShots" min="1" max="20" inputmode="numeric" style="text-align:center;" value="${entryData._cardHc||''}"></div>
+        <div class="field"><label>Given to</label><select id="hcTo"><option value="t1"${entryData._cardHcTo==='t1'?' selected':''}>Side A</option><option value="t2"${entryData._cardHcTo==='t2'?' selected':''}>Side B</option></select></div>
+        <div style="font-size:12px;color:#666;">Enter the shots <b>as on the board</b>. The start is taken off before rating — ratings always use the scratch score.${entryData._suggestStart&&entryData._suggestStart.shots>0?` <span style="color:#B9770E;">System suggested +${entryData._suggestStart.shots} to ${entryData._suggestStart.to==='t1'?'Side A':'Side B'} — pre-filled; change it if the handicapper set something else.</span>`:''}</div>
       </div>
     </div>
     <div id="err3" class="error-msg">Enter both shot totals.</div>
     <button class="btn btn-primary" onclick="step3Next()">Next: Verify &rarr;</button>
-    <button class="btn btn-secondary" style="margin-top:8px;" onclick="renderStep2()">&larr; Back</button>`;
+    <button class="btn btn-secondary" style="margin-top:8px;" onclick="${entryData._cardId?'renderOpenCards()':'renderStep2()'}">&larr; Back</button>`;
 }
 function step3Next(){
   const err=document.getElementById('err3');
@@ -8224,9 +8325,10 @@ async function doSubmit(btn){
   };
   let result=null;
   try{
-    const resp=await fetch(SB_URL+"/functions/v1/obr_submit_match",{ method:"POST",
-      headers:{ apikey:SB_ANON, Authorization:"Bearer "+SB_ANON, "Content-Type":"application/json" },
-      body:JSON.stringify({ club_id:CLUB_ID, submitter:entryData._submitter, pin:entryData._pin, match }) });
+    const url = entryData._cardId ? SB_URL+"/functions/v1/obr_cards" : SB_URL+"/functions/v1/obr_submit_match";
+    const payload = entryData._cardId ? { action:'close_card', card_id:entryData._cardId, club_id:CLUB_ID, submitter:entryData._submitter, pin:entryData._pin, match }
+                                      : { club_id:CLUB_ID, submitter:entryData._submitter, pin:entryData._pin, match };
+    const resp=await fetch(url,{ method:"POST", headers:{ apikey:SB_ANON, Authorization:"Bearer "+SB_ANON, "Content-Type":"application/json" }, body:JSON.stringify(payload) });
     result=await resp.json().catch(()=>null);
     if(!resp.ok||!result||!result.ok){ err.innerHTML='<strong>⚠️ Not submitted.</strong><br>'+((result&&result.error)||('save failed (status '+resp.status+')')); err.style.display='block'; btn.disabled=false; btn.textContent='\u2713 Submit Match'; return; }
   }catch(e){ err.innerHTML='<strong>⚠️ Your score was NOT saved.</strong><br>Connection problem. Please try again.'; err.style.display='block'; btn.disabled=false; btn.textContent='\u2713 Submit Match'; return; }
@@ -8241,7 +8343,7 @@ async function doSubmit(btn){
       <div style="font-size:12px;color:#888;margin-top:6px;">${entryData.t1games}–${entryData.t2games} shots</div>
       <div style="font-size:11px;color:#aaa;margin-top:4px;">Submitted by ${who}</div>${fx}
     </div>
-    <button class="btn btn-primary" style="margin-top:20px;" onclick="renderStep1()">Enter Another Match</button>
+    <button class="btn btn-primary" style="margin-top:20px;" onclick="renderStep1()">Scorecard</button>
     <button class="btn btn-secondary" style="margin-top:8px;" onclick="goHome()">Back to Home</button>`;
   setStep(0);
   if(typeof loadRecent==='function') try{ loadRecent(); }catch(e){}
@@ -8449,6 +8551,39 @@ async function loadFormWall(type, title){
     document.getElementById('ladderContent').className=''; document.getElementById('ladderContent').innerHTML=html;
     addExportBar('ladderContent','Form',title);
   }catch(e){ document.getElementById('ladderContent').innerHTML='<div class="empty-state"><div class="icon">⚠️</div><p>Could not load form: '+(e.message||e)+'</p></div>'; }
+}
+
+// ---- OBR ENTRY PREVIEW: rating under each picked name, derived side strength pill, and — once both
+//      sides are complete — the expected shot share and the DERIVED START (handicap suggestion). ----
+const OBR_HC_CAP={singles:8,team:10}; const OBR_HC_T=36; const OBR_HC_STRENGTH=1.0;   // club-configurable later (Admin)
+function obrSuggestStart(rA,rB,fmt){
+  const gap=Math.abs(rA-rB); if(gap===0) return {shots:0,to:null,E:0.5};
+  const E=1/(1+Math.pow(10,-gap/250));   // favourite's expected share
+  let h = (fmt==='singles') ? Math.round(21*(2*E-1)/E*OBR_HC_STRENGTH) : Math.round((2*E-1)*OBR_HC_T*OBR_HC_STRENGTH);
+  h=Math.min(h, fmt==='singles'?OBR_HC_CAP.singles:OBR_HC_CAP.team);
+  return {shots:h, to:(rA>rB?'t2':'t1'), E};
+}
+function otrUpdatePreview(){
+  if(!entryData||!entryData.format) return;
+  const R=(nm)=> (nm && OTR_RATING[nm]!=null) ? OTR_RATING[nm] : (nm ? 1500 : null);
+  const strength={};
+  ['t1','t2'].forEach(side=>{
+    const ids=obrSlots(side); const names=ids.map(id=>((document.getElementById(id+'_val')||{}).value||'').trim());
+    ids.forEach((id,i)=>{ const el=document.getElementById(id+'_rt'); if(!el) return; if(names[i]){ el.style.display=''; el.innerHTML=`Rating <b>${Math.round(R(names[i]))}</b> · Lvl ${(R(names[i])/200).toFixed(1)}`; } else el.style.display='none'; });
+    const prev=document.getElementById(side==='t1'?'otrPrev1':'otrPrev2'); if(!prev) return;
+    if(names.every(Boolean)){ const v=_obrTeamStrength(names.map(R)); strength[side]=v;
+      prev.innerHTML=(names.length>1?'Side strength · ':'Rating · ')+`<b style="color:#D35400;">${Math.round(v)}</b> · Lvl ${(v/200).toFixed(1)}`+(names.length>1?` <span style="color:#888;font-size:11px;">(${names.length===2?'60/40':names.length===3?'45/33/22':'40/28/20/12'} strongest-first)</span>`:'');
+      prev.style.display='block'; } else prev.style.display='none';
+  });
+  const mp=document.getElementById('obrMatchPrev'); if(!mp) return;
+  if(strength.t1!=null && strength.t2!=null){
+    const E1=1/(1+Math.pow(10,(strength.t2-strength.t1)/250));
+    const sg=obrSuggestStart(strength.t1,strength.t2,entryData.format);
+    entryData._suggestStart=sg;
+    mp.innerHTML=`Expected shots share: <b>Side A ${Math.round(E1*100)}%</b> · <b>Side B ${Math.round((1-E1)*100)}%</b>`
+      +(sg.shots>0?`<br><span style="color:#B9770E;font-weight:700;">Suggested start: +${sg.shots} to ${sg.to==='t1'?'Side A':'Side B'}</span> <span style="color:#666;font-size:11px;">— if the club plays this game with a handicap. Scratch play needs nothing.</span>`:'<br><span style="color:#666;font-size:11px;">Evenly matched — no start suggested.</span>');
+    mp.style.display='';
+  } else mp.style.display='none';
 }
 
 </script>
