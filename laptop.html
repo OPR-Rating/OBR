@@ -1743,7 +1743,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.05-6";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.05-7";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
@@ -8283,9 +8283,15 @@ async function toggleRecent(idx){
   if(detail.style.display==='none'){
     const m=recentMatchesData[idx]; detail.style.display='block'; arrow.textContent='▲';
     const W=Math.max(m.t1_sets||0,m.t2_sets||0);
-    const wTxt=W===0?'Roll-up — not rated':(W===1?'Tabs-in weight':'Full competition weight');
-    const hc=m.handicap_shots?(' · start +'+m.handicap_shots+' to '+(m.handicap_to==='t1'?'Side A':'Side B')+' (scratch shown)'):'';
-    detail.innerHTML=`<div style="font-size:11px;color:#888;text-align:center;">${m.event||''}${m.ends?' · '+m.ends+' ends':''} · ${wTxt}${hc}${m.submitted_by?' · entered by '+m.submitted_by:''}</div>`;
+    const wTxt=W===0?'not rated':(W===1?'weight 1 (tabs-in)':'weight 2 (competition)');
+    const hc=m.handicap_shots?(' · start +'+m.handicap_shots+' to '+(m.handicap_to==='t1'?'Side A':'Side B')+', scratch shown'):'';
+    // OPR-style result pills: each side's shots in its own colour (green won / red lost / amber peel), ends chip, delta chip
+    const A=obrSideNames(m,'t1'), B=obrSideNames(m,'t2'); const ga=m.t1_games||0, gb=m.t2_games||0;
+    const col=(mine,theirs)=> mine>theirs?'#1e8449':(mine<theirs?'#c0392b':'#B9770E');
+    const pill=(txt,bg)=>`<span class="amr-chip" style="background:${bg};">${txt}</span>`;
+    const chips=pill(`${A.length>1?'Side A':A[0]} ${ga}/${gb}`,col(ga,gb))+pill(`${B.length>1?'Side B':B[0]} ${gb}/${ga}`,col(gb,ga))
+      +(m.ends?pill(m.ends+' ends','#5a6e66'):'')+(m.peel?pill('peel','#B9770E'):'');
+    detail.innerHTML=`<div class="amr-chiprow" style="justify-content:center;">${chips}</div><div style="font-size:11px;color:#888;text-align:center;margin-top:4px;">${m.event||''} · ${wTxt}${hc}${m.submitted_by?' · entered by '+m.submitted_by:''}</div>`;
   } else { detail.style.display='none'; arrow.textContent='▼'; }
 }
 
