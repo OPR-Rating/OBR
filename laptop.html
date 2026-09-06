@@ -602,22 +602,25 @@
     </div>
     <div class="screen-content">
       <div style="background:#0F6E56;color:#fff;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:15px;font-weight:700;text-align:center;letter-spacing:0.3px;">Overall Ratings &amp; Ladder Standings</div>
-      <div style="background:rgba(15,110,86,.08);border:1px solid rgba(15,110,86,.30);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#0d4a38;line-height:1.5;text-align:center;">Overall standings for ALL matches recorded in both Social and Tournament records</div>
-      <div class="ladders-group-title">Singles Ratings</div>
+      <div style="background:rgba(15,110,86,.08);border:1px solid rgba(15,110,86,.30);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:12px;color:#0d4a38;line-height:1.5;text-align:center;">Overall standings for ALL matches recorded — tabs-in, competitions, league rinks and tournaments</div>
+      <div class="ladders-group-title">Individual Ratings</div>
+      <div style="font-size:11px;color:#3a6b5c;margin:-4px 0 8px;">One rating per member, earned across every format played.</div>
       <div class="ladders-grid">
-        <button class="menu-btn" onclick="loadLadder('mens','Mens Rating')">Men's Rating</button>
+        <button class="menu-btn" onclick="loadLadder('mens','Men\'s Rating')">Men's Rating</button>
         <button class="menu-btn" onclick="loadLadder('ladies','Ladies Rating')">Ladies Rating</button>
       </div>
-      <div class="ladders-group-title">Doubles Ratings</div>
-      <div class="ladders-grid">
-        <button class="menu-btn" onclick="loadLadder('mensdoubles','Mens Doubles Rating')">Men's Doubles Rating</button>
-        <button class="menu-btn" onclick="loadLadder('ladiesdoubles','Ladies Doubles Rating')">Ladies Doubles Rating</button>
-        <button class="menu-btn" onclick="loadLadder('mixed','Mixed Doubles Rating')">Mixed Doubles Rating</button>
-        <button class="menu-btn" onclick="loadLadder('allsorts','All Sorts Rating')">All Sorts Rating</button>
-      </div>
-      <div class="ladders-group-title">Universal</div>
       <div class="ladders-grid one-col">
-        <button class="menu-btn" onclick="loadLadder('universal','Universal Rating')">Universal Rating</button>
+        <button class="menu-btn" onclick="loadLadder('all','Club Rating — everyone')">Club Rating — everyone</button>
+      </div>
+      <div class="ladders-group-title">Team Ratings</div>
+      <div style="font-size:11px;color:#3a6b5c;margin:-4px 0 8px;">Teams that have played together, ranked by derived team strength. Filter Men's · Ladies · Mixed · Open inside each sheet.</div>
+      <div class="ladders-grid">
+        <button class="menu-btn" onclick="loadLadder('team:pairs','Pairs Rating')">Pairs Rating</button>
+        <button class="menu-btn" onclick="loadLadder('team:triples','Triples Rating')">Triples Rating</button>
+      </div>
+      <div class="ladders-grid">
+        <button class="menu-btn" onclick="loadLadder('team:fours','Fours Rating')">Fours Rating</button>
+        <button class="menu-btn" onclick="loadLadder('team:singles','Singles Record')">Singles Record</button>
       </div>
       <div class="ladders-group-title">Club Ladder</div>
       <div class="ladders-grid one-col">
@@ -1743,7 +1746,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.05-7";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.06-9";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
@@ -1852,6 +1855,14 @@ async function sbGet(pathq){
 // Singles-aware side name: "A & B" for doubles, just "A" when the partner slot is null.
 function sideName(p1,p2,sep){ sep=sep||" & "; return p2?((p1||"")+sep+p2):(p1||""); }
 function rankBadge(n){ const cls=n===1?'rank-1':n===2?'rank-2':n===3?'rank-3':''; return `<span class="rank-badge ${cls}">${n}</span>`; }
+
+// OPR behaviour (master): tapping a team row in Ratings opens the TEAM PROFILE page, not an inline dropdown.
+function obrOpenTeam(i){
+  const p=window._doublesRows[i]; if(!p) return; const team=_obrTeamOf(p); const cat=window._doublesCat||'Universal';
+  window._profileFrom='ladder';
+  if(team.length===1){ loadProfile(team[0], (window._plGenderMap&&window._plGenderMap[team[0]])||'M'); return; }
+  loadTeamProfile(team[0], team.slice(1).sort().join(' · '), cat.replace(/ Singles$/,''));
+}
 
 async function togglePairMatches(i){
   const detail=document.getElementById('pairdetail_'+i);
@@ -8293,6 +8304,110 @@ async function toggleRecent(idx){
       +(m.ends?pill(m.ends+' ends','#5a6e66'):'')+(m.peel?pill('peel','#B9770E'):'');
     detail.innerHTML=`<div class="amr-chiprow" style="justify-content:center;">${chips}</div><div style="font-size:11px;color:#888;text-align:center;margin-top:4px;">${m.event||''} · ${wTxt}${hc}${m.submitted_by?' · entered by '+m.submitted_by:''}</div>`;
   } else { detail.style.display='none'; arrow.textContent='▼'; }
+}
+
+// ---- OBR RATINGS SHEETS: individual (M / F / all) and team-by-format with category chips ----
+const OBR_TEAM_SIZE={singles:1,pairs:2,triples:3,fours:4};
+const OBR_MIN_MATCHES=5;   // qualification for a ranked team row (family: 12 sets ≈ 4–6 matches)
+function _obrTeamOf(p){ return [p.p1,p.p2,p.p3,p.p4].filter(Boolean); }
+async function loadLadder(type, title){
+  window._lastLadder={type,title};
+  document.getElementById('ladderTitle').textContent=title;
+  document.getElementById('ladderContent').innerHTML='<div class="loading"><span class="loading-spinner">⏳</span>Loading...</div>';
+  showScreen('ladderScreen');
+  try{
+    let html='';
+    if(type==='mens'||type==='ladies'||type==='all'){
+      const gq = type==='all' ? '' : `&gender=eq.${type==='mens'?'M':'F'}`;
+      const data = await sbGet(`obr_player_results?select=name,gender,current_rating,initial_rating&order=current_rating.desc&club_id=eq.${CLUB_ID}${gq}`)||[];
+      window._singlesRows=data; window._singlesGender=(type==='ladies'?'F':'M');
+      // matches per member for the sheet
+      const mAll = await sbGet(`obr_matches?select=t1p1,t1p2,t1p3,t1p4,t2p1,t2p2,t2p3,t2p4,t1_games,t2_games&club_id=eq.${CLUB_ID}`)||[];
+      const mc={}, wc={};
+      mAll.forEach(m=>{ const A=obrSideNames(m,'t1'),B=obrSideNames(m,'t2'); const aw=(m.t1_games||0)>(m.t2_games||0), bw=(m.t2_games||0)>(m.t1_games||0);
+        A.forEach(n=>{mc[n]=(mc[n]||0)+1; if(aw) wc[n]=(wc[n]||0)+1;}); B.forEach(n=>{mc[n]=(mc[n]||0)+1; if(bw) wc[n]=(wc[n]||0)+1;}); });
+      html=(typeof ladderNoteHTML==='function')?ladderNoteHTML():'';
+      html+='<table class="ladder-table"><thead><tr><th>Rank</th><th>Name</th><th>Rating</th><th>Level</th><th>Move</th><th>Played</th><th>Won</th></tr></thead><tbody>';
+      data.forEach((p,i)=>{
+        const lvl=(p.current_rating/200).toFixed(1);
+        const mv=(p.current_rating!=null&&p.initial_rating!=null)?Math.round(p.current_rating-p.initial_rating):null;
+        const mvCell=mv==null?'—':`<span style="color:${mv<0?'#c0392b':'#1e8449'};font-weight:700;">${mv>0?'+':''}${mv}</span>`;
+        html+=`<tr style="cursor:pointer;" onclick="window._singlesGender='${p.gender||'M'}';ladProfile(${i})"><td>${rankBadge(i+1)}</td><td>${p.name}${type==='all'?` <span style="color:#888;font-size:10px;">${p.gender==='F'?'L':'M'}</span>`:''}</td><td>${Math.round(p.current_rating)}</td><td>${lvl}</td><td>${mvCell}</td><td>${mc[p.name]||0}</td><td>${wc[p.name]||0}</td></tr>`;
+      });
+      html+='</tbody></table>';
+      document.getElementById('ladderContent').className=''; document.getElementById('ladderContent').innerHTML=html;
+      addExportBar('ladderContent','Ratings','Ratings & Ladder'); return;
+    }
+    // TEAM sheet: type 'team:<format>'; category chips select the category (Universal = all)
+    const fmt=type.split(':')[1]; const size=OBR_TEAM_SIZE[fmt]||2;
+    window._obrTeamFmt=fmt; window._obrTeamCat=window._obrTeamCat||'Universal';
+    await obrRenderTeamSheet();
+  }catch(e){ document.getElementById('ladderContent').innerHTML='<div class="empty-state"><div class="icon">⚠️</div><p>Could not load: '+(e.message||e)+'</p></div>'; }
+}
+async function obrRenderTeamSheet(){
+  const fmt=window._obrTeamFmt, size=OBR_TEAM_SIZE[fmt], cat=window._obrTeamCat;
+  const catQ = cat==='Universal' ? 'Universal' : (fmt==='singles' ? cat+' Singles' : cat);
+  const chips=['Universal',"Men's",'Ladies','Mixed','Open'].map(c=>`<button class="btn" style="padding:6px 12px;font-size:12px;border-radius:999px;border:1.5px solid #0F6E56;background:${c===cat?'#0F6E56':'#fff'};color:${c===cat?'#fff':'#0F6E56'};" onclick="window._obrTeamCat='${c}';obrRenderTeamSheet()">${c==='Universal'?'All':c}</button>`).join(' ');
+  let data=[];
+  if(fmt==='singles' && cat==='Universal'){
+    // singles records live per category ("<Type> Singles"); merge them for the All view
+    const all = await sbGet(`obr_doubles_results?select=rank,category,p1,p2,p3,p4,weighted,level,matches,wins,losses,win_pct&category=like.*Singles&order=weighted.desc&club_id=eq.${CLUB_ID}`)||[];
+    const byName={}; all.forEach(r=>{ const k=r.p1; if(!byName[k]) byName[k]={...r,matches:0,wins:0,losses:0}; byName[k].matches+=r.matches||0; byName[k].wins+=r.wins||0; byName[k].losses+=r.losses||0; });
+    data=Object.values(byName).map(r=>({...r,win_pct:r.matches?Math.round(r.wins/r.matches*1000)/10:0})).sort((a,b)=>b.weighted-a.weighted);
+  } else {
+    data = await sbGet(`obr_doubles_results?select=rank,category,p1,p2,p3,p4,weighted,level,matches,wins,losses,win_pct&category=eq.${encodeURIComponent(catQ)}&order=weighted.desc&club_id=eq.${CLUB_ID}`)||[];
+    data = data.filter(r=>_obrTeamOf(r).length===size);
+  }
+  window._doublesRows=data; window._doublesCat=catQ;
+  // team move since inception: sum of rating_delta over the team's matches
+  const mv={};
+  try{
+    const mAll = await sbGet(`obr_matches?select=t1p1,t1p2,t1p3,t1p4,t2p1,t2p2,t2p3,t2p4,rating_delta&club_id=eq.${CLUB_ID}`)||[];
+    mAll.forEach(m=>{ const d=(m.rating_delta!=null?Number(m.rating_delta):0); const kA=obrSideNames(m,'t1').slice().sort().join('|'), kB=obrSideNames(m,'t2').slice().sort().join('|'); mv[kA]=(mv[kA]||0)+d; mv[kB]=(mv[kB]||0)-d; });
+  }catch(_e){}
+  const label={singles:'Player',pairs:'Pair',triples:'Triple',fours:'Four'}[fmt];
+  let html=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">${chips}</div>`;
+  if(!data.length){ html+=`<div class="empty-state"><p>No ${fmt} recorded${cat==='Universal'?'':' in '+cat} yet.</p></div>`; }
+  else{
+    html+=`<table class="ladder-table"><thead><tr><th>Rank</th><th>${label}</th><th>Rating (Wtd)</th><th>Level</th><th>Move</th><th>Played</th><th>Won</th><th>% Won</th></tr></thead><tbody>`;
+    const qualified=[],unqualified=[]; data.forEach((p,i)=>{ (((p.matches||0)>=OBR_MIN_MATCHES)?qualified:unqualified).push({p,i}); });
+    const row=(p,i,rankCell,style)=>{ const ms=_obrTeamOf(p); const m=mv[ms.slice().sort().join('|')]; const mvc=m==null?'—':`<span style="color:${Math.round(m)<0?'#c0392b':'#1e8449'};font-weight:700;">${m>0?'+':''}${Math.round(m)}</span>`;
+      return `<tr class="pair-row" style="cursor:pointer;${style}" onclick="obrOpenTeam(${i})" id="pairrow_${i}"><td>${rankCell}</td><td>${ms.join(' · ')} <span style="color:#12855F;font-size:10px;">›</span></td><td>${Math.round(p.weighted)}</td><td>${Number(p.level).toFixed(1)}</td><td>${mvc}</td><td>${p.matches||0}</td><td>${p.wins||0}</td><td>${p.win_pct==null?'—':Number(p.win_pct).toFixed(0)}</td></tr>`
+        +`<tr id="pairdetail_${i}" style="display:none;"><td colspan="8" style="background:rgba(15,110,86,.12);padding:0;"><div id="pairdetailinner_${i}" style="padding:10px 14px;font-size:12px;"></div></td></tr>`; };
+    let r=0; qualified.forEach(({p,i})=>{ r++; html+=row(p,i,rankBadge(r),''); });
+    if(unqualified.length){ html+=`<tr><td colspan="8" style="background:rgba(15,110,86,.08);color:#3a6b5c;font-size:11px;font-style:italic;padding:7px 12px;">Not yet qualified — fewer than ${OBR_MIN_MATCHES} matches together (shown for reference; not ranked)</td></tr>`; unqualified.forEach(({p,i})=>{ html+=row(p,i,'—','opacity:0.55;'); }); }
+    html+='</tbody></table>';
+  }
+  document.getElementById('ladderContent').className=''; document.getElementById('ladderContent').innerHTML=html;
+  addExportBar('ladderContent','Ratings','Ratings & Ladder');
+}
+async function togglePairMatches(i){
+  const detail=document.getElementById('pairdetail_'+i), inner=document.getElementById('pairdetailinner_'+i);
+  if(detail.style.display!=='none'){ detail.style.display='none'; return; }
+  detail.style.display=''; inner.innerHTML='<span style="color:#888;">Loading matches…</span>';
+  const p=window._doublesRows[i], cat=window._doublesCat, team=_obrTeamOf(p), key=team.slice().sort().join('|');
+  try{
+    const ea=encodeURIComponent(team[0]);
+    const data = await sbGet(`obr_matches?select=match_date,match_type,event,match_format,peel,t1p1,t1p2,t1p3,t1p4,t2p1,t2p2,t2p3,t2p4,t1_games,t2_games,rating_delta,t1_rating_at,t2_rating_at&or=(t1p1.eq.${ea},t1p2.eq.${ea},t1p3.eq.${ea},t1p4.eq.${ea},t2p1.eq.${ea},t2p2.eq.${ea},t2p3.eq.${ea},t2p4.eq.${ea})&order=match_date.desc,id.desc&club_id=eq.${CLUB_ID}`)||[];
+    let rows=data.filter(m=>obrSideNames(m,'t1').slice().sort().join('|')===key||obrSideNames(m,'t2').slice().sort().join('|')===key);
+    if(cat!=='Universal') rows=rows.filter(m=>m.match_type===cat.replace(/ Singles$/,''));
+    if(!rows.length){ inner.innerHTML='<span style="color:#888;">No matches found for this team.</span>'; return; }
+    let h=`<div style="font-weight:700;color:#0d4a38;margin-bottom:6px;">${team.join(' · ')} — match history <span style="font-weight:400;color:#12855F;cursor:pointer;" onclick="event.stopPropagation();${team.length===1?`loadProfile('${team[0].replace(/'/g,"\\'")}','M')`:`loadTeamProfile('${team[0].replace(/'/g,"\\'")}','${team.slice(1).sort().join(' · ').replace(/'/g,"\\'")}','${cat}')`}">· open profile →</span></div>`;
+    rows.forEach(m=>{
+      const onT1=obrSideNames(m,'t1').slice().sort().join('|')===key;
+      const mine=onT1?(m.t1_games||0):(m.t2_games||0), theirs=onT1?(m.t2_games||0):(m.t1_games||0);
+      const opp=obrSideNames(m,onT1?'t2':'t1').join(' · ');
+      const at=onT1?m.t2_rating_at:m.t1_rating_at;
+      const d=(m.rating_delta!=null)?(onT1?Number(m.rating_delta):-Number(m.rating_delta)):null;
+      const col=mine>theirs?'#1e8449':(mine<theirs?'#c0392b':'#B9770E');
+      h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(15,110,86,.15);">
+        <div style="flex:1;min-width:0;"><span style="color:#555;">${m.match_date}</span> · vs <b>${opp}</b>${at!=null?` <span style="color:#12855F;">(${Math.round(at)})</span>`:''}<div style="font-size:11px;color:#888;">${m.event||''}${m.peel?' · peel':''}</div></div>
+        <span class="amr-chip" style="background:${col};">${mine}/${theirs}</span>
+        ${d!=null?`<span style="font-weight:700;color:${d<0?'#c0392b':'#1e8449'};min-width:44px;text-align:right;">${d>0?'+':''}${d.toFixed(1)}</span>`:''}
+      </div>`;
+    });
+    inner.innerHTML=h;
+  }catch(e){ inner.innerHTML='<span style="color:#c0392b;">Could not load.</span>'; }
 }
 
 </script>
