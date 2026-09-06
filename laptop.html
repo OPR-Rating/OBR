@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>OBR</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;1,9..144,600;1,9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="manifest" href='data:application/manifest+json,{"name":"OBR · TourTest","short_name":"OBR TourTest","start_url":"./tourtest.html","scope":"./","display":"standalone","background_color":"%23071a12","theme_color":"%23071a12","icons":[{"src":"./icon-192.png","sizes":"192x192","type":"image/png"},{"src":"./icon-512.png","sizes":"512x512","type":"image/png"}]}'>
+<link rel="manifest" href='data:application/manifest+json,{"name":"OBR · Open Bowls Rating","short_name":"OBR","start_url":"./laptop.html?club=1","scope":"./","display":"standalone","background_color":"%23071a12","theme_color":"%23071a12","icons":[{"src":"./icon-192.png","sizes":"192x192","type":"image/png"},{"src":"./icon-512.png","sizes":"512x512","type":"image/png"}]}'>
 <meta name="theme-color" content="#0F6E56">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="OBR Demo">
+<meta name="apple-mobile-web-app-title" content="OBR">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -608,19 +608,15 @@
       <div class="ladders-grid">
         <button class="menu-btn" onclick="loadLadder('mens','Men\'s Rating')">Men's Rating</button>
         <button class="menu-btn" onclick="loadLadder('ladies','Ladies Rating')">Ladies Rating</button>
-      </div>
-      <div class="ladders-grid one-col">
-        <button class="menu-btn" onclick="loadLadder('all','Club Rating — everyone')">Club Rating — everyone</button>
+        <button class="menu-btn" style="grid-column:1 / -1;" onclick="loadLadder('all','Club Rating — everyone')">Club Rating — everyone</button>
       </div>
       <div class="ladders-group-title">Team Ratings</div>
       <div style="font-size:11px;color:#3a6b5c;margin:-4px 0 8px;">Teams that have played together, ranked by derived team strength. Filter Men's · Ladies · Mixed · Open inside each sheet.</div>
       <div class="ladders-grid">
+        <button class="menu-btn" onclick="loadLadder('team:singles','Singles Record')">Singles Record</button>
         <button class="menu-btn" onclick="loadLadder('team:pairs','Pairs Rating')">Pairs Rating</button>
         <button class="menu-btn" onclick="loadLadder('team:triples','Triples Rating')">Triples Rating</button>
-      </div>
-      <div class="ladders-grid">
         <button class="menu-btn" onclick="loadLadder('team:fours','Fours Rating')">Fours Rating</button>
-        <button class="menu-btn" onclick="loadLadder('team:singles','Singles Record')">Singles Record</button>
       </div>
       <div class="ladders-group-title">Club Ladder</div>
       <div class="ladders-grid one-col">
@@ -1746,7 +1742,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.06-11";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.06-13";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
