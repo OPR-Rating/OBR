@@ -1746,7 +1746,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.06-9";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.06-10";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
@@ -7992,6 +7992,8 @@ button[onclick^="umpireFromEntry"],button[onclick^="mkOpen"]{display:none!import
 #entryContent .field label{font-size:14px;}
 #entryContent .player-pick{font-size:18px!important;padding:16px!important;min-height:56px;}
 #entryContent .btn-primary,#entryContent .btn-success{font-size:17px;padding:16px;}
+.obr-chip{display:inline-block;width:auto;margin:0 6px 6px 0;padding:6px 14px;font-size:12px;font-weight:700;border-radius:999px;border:1.5px solid #0F6E56;background:#fff;color:#0F6E56;cursor:pointer;line-height:1.2;}
+.obr-chip.on{background:#0F6E56;color:#fff;}
 </style>
 <script id="obrEntry">
 // ============================================================================
@@ -8340,14 +8342,14 @@ async function loadLadder(type, title){
     }
     // TEAM sheet: type 'team:<format>'; category chips select the category (Universal = all)
     const fmt=type.split(':')[1]; const size=OBR_TEAM_SIZE[fmt]||2;
-    window._obrTeamFmt=fmt; window._obrTeamCat=window._obrTeamCat||'Universal';
+    window._obrTeamFmt=fmt; window._obrTeamCat=window._obrTeamCat||'Universal'; window._obrMvCache=null;
     await obrRenderTeamSheet();
   }catch(e){ document.getElementById('ladderContent').innerHTML='<div class="empty-state"><div class="icon">⚠️</div><p>Could not load: '+(e.message||e)+'</p></div>'; }
 }
 async function obrRenderTeamSheet(){
   const fmt=window._obrTeamFmt, size=OBR_TEAM_SIZE[fmt], cat=window._obrTeamCat;
   const catQ = cat==='Universal' ? 'Universal' : (fmt==='singles' ? cat+' Singles' : cat);
-  const chips=['Universal',"Men's",'Ladies','Mixed','Open'].map(c=>`<button class="btn" style="padding:6px 12px;font-size:12px;border-radius:999px;border:1.5px solid #0F6E56;background:${c===cat?'#0F6E56':'#fff'};color:${c===cat?'#fff':'#0F6E56'};" onclick="window._obrTeamCat='${c}';obrRenderTeamSheet()">${c==='Universal'?'All':c}</button>`).join(' ');
+  const chips=['Universal',"Men's",'Ladies','Mixed','Open'].map(c=>`<button type="button" class="obr-chip${c===cat?' on':''}" onclick="window._obrTeamCat='${c}';obrRenderTeamSheet()">${c==='Universal'?'All':c}</button>`).join('');
   let data=[];
   if(fmt==='singles' && cat==='Universal'){
     // singles records live per category ("<Type> Singles"); merge them for the All view
@@ -8362,7 +8364,8 @@ async function obrRenderTeamSheet(){
   // team move since inception: sum of rating_delta over the team's matches
   const mv={};
   try{
-    const mAll = await sbGet(`obr_matches?select=t1p1,t1p2,t1p3,t1p4,t2p1,t2p2,t2p3,t2p4,rating_delta&club_id=eq.${CLUB_ID}`)||[];
+    if(!window._obrMvCache){ window._obrMvCache = await sbGet(`obr_matches?select=t1p1,t1p2,t1p3,t1p4,t2p1,t2p2,t2p3,t2p4,rating_delta&club_id=eq.${CLUB_ID}`)||[]; }
+    const mAll = window._obrMvCache;
     mAll.forEach(m=>{ const d=(m.rating_delta!=null?Number(m.rating_delta):0); const kA=obrSideNames(m,'t1').slice().sort().join('|'), kB=obrSideNames(m,'t2').slice().sort().join('|'); mv[kA]=(mv[kA]||0)+d; mv[kB]=(mv[kB]||0)-d; });
   }catch(_e){}
   const label={singles:'Player',pairs:'Pair',triples:'Triple',fours:'Four'}[fmt];
