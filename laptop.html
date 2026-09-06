@@ -649,18 +649,16 @@
             <li><strong>0.55–0.70</strong> — Good, winning more than losing.</li>
             <li><strong>0.40–0.55</strong> — Middling, competitive but mixed.</li>
             <li><strong>0.00–0.40</strong> — Struggling.</li>
-            <li><strong>Below 0</strong> — Losing sets by wide margins.</li>
+            <li><strong>Below 0</strong> — Losing by wide shot margins.</li>
           </ul>
           <p style="margin:0 0 4px;"><strong>Why Form, not just Win %?</strong></p>
-          <p style="margin:0;">Win % treats a narrow 7–6 win the same as a crushing 6–0, and ignores who you played. Form rewards convincing performances and accounts for opponent strength — a fairer picture of how someone is actually playing. For doubles, Form shows how a <strong>partnership performs as a team</strong>.</p>
+          <p style="margin:0;">Win % treats a narrow 17–16 win the same as a 28–8 rout. Form rewards convincing performances and accounts for opponent strength — a fairer picture of how someone is actually playing. For doubles, Form shows how a <strong>partnership performs as a team</strong>.</p>
         </div>
         <div class="ladders-grid one-col">
           <button class="menu-btn" onclick="loadFormWall('individual','Individual Form')">Individual Form</button>
-          <button class="menu-btn" onclick="loadFormWall('mensdoubles',&quot;Men's Doubles Form&quot;)">Men's Doubles Form</button>
-          <button class="menu-btn" onclick="loadFormWall('ladiesdoubles','Ladies Doubles Form')">Ladies Doubles Form</button>
-          <button class="menu-btn" onclick="loadFormWall('mixed','Mixed Doubles Form')">Mixed Doubles Form</button>
-          <button class="menu-btn" onclick="loadFormWall('allsorts','All Sorts Form')">All Sorts Form</button>
-          <button class="menu-btn" onclick="loadFormWall('universal','Universal Doubles Form')">Universal Doubles Form</button>
+          <button class="menu-btn" onclick="loadFormWall('team:pairs','Pairs Form')">Pairs Form</button>
+          <button class="menu-btn" onclick="loadFormWall('team:triples','Triples Form')">Triples Form</button>
+          <button class="menu-btn" onclick="loadFormWall('team:fours','Fours Form')">Fours Form</button>
         </div>
       </div>
     </div>
@@ -737,7 +735,7 @@
             <li><strong>0.55–0.70</strong> — Good, winning more than losing.</li>
             <li><strong>0.40–0.55</strong> — Middling, competitive but mixed.</li>
             <li><strong>0.00–0.40</strong> — Struggling.</li>
-            <li><strong>Below 0</strong> — Losing sets by wide margins.</li>
+            <li><strong>Below 0</strong> — Losing by wide shot margins.</li>
           </ul>
           <p style="margin:0 0 4px;"><strong>Why Form, not just Win %?</strong></p>
           <p style="margin:0;">Win % treats a narrow win the same as a crushing one, and ignores who you played. Form rewards convincing performances and accounts for opponent strength. For doubles, Form shows how a <strong>partnership performs as a team</strong>.</p>
@@ -1742,7 +1740,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.06-13";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.06-15";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
@@ -2554,10 +2552,14 @@ async function loadProfileIndividual(name, gender) {
     if(singlesRow){
       html += `<div class="section-header">Singles</div>` + profCard(singlesRow);
     }
-    html += `<div class="section-header">Teams played in</div>`;
-    if(doublesRows.length){
-      html += doublesRows.map(profCard).join('');
-    } else {
+    // BOWLS: team cards grouped by format — Pairs · Triples · Fours (team size = partner names + 1)
+    const _fmtOf=(r)=>({2:'Pairs',3:'Triples',4:'Fours'}[String(r.partner||'').split(' · ').filter(Boolean).length+1]||'Teams');
+    let _any=false;
+    ['Pairs','Triples','Fours'].forEach(f=>{
+      const rs=doublesRows.filter(r=>_fmtOf(r)===f);
+      if(rs.length){ _any=true; html += `<div class="section-header">${f}</div>` + rs.map(profCard).join(''); }
+    });
+    if(!singlesRow && !_any){
       html += '<div class="empty-state" style="padding:20px 0;"><p>No matches yet</p></div>';
     }
     box.innerHTML = html;
@@ -8412,6 +8414,41 @@ async function togglePairMatches(i){
     });
     inner.innerHTML=h;
   }catch(e){ inner.innerHTML='<span style="color:#c0392b;">Could not load.</span>'; }
+}
+
+// ---- OBR FORM: computed here from matches in bowls units (family structure 40/40/20:
+//      win rate · net shots per match ÷ 10 · shots share). Rated matches only (roll-ups excluded). Min 5 matches. ----
+const OBR_FORM_MIN=5;
+function obrFormValue(a){ const m=a.m; if(!m) return null; const wr=a.w/m, net=(a.f-a.ag)/m, share=(a.f+a.ag)?a.f/(a.f+a.ag):0.5;
+  let f=wr*0.4+Math.max(-1,Math.min(1,net/10))*0.4+share*0.2; return Math.round(f*1000)/1000; }
+async function loadFormWall(type, title){
+  document.getElementById('ladderTitle').textContent=title;
+  document.getElementById('ladderContent').innerHTML='<div class="loading"><span class="loading-spinner">⏳</span>Loading...</div>';
+  showScreen('ladderScreen');
+  try{
+    const mAll=(await sbGet(`obr_matches?select=match_type,t1p1,t1p2,t1p3,t1p4,t2p1,t2p2,t2p3,t2p4,t1_sets,t2_sets,t1_games,t2_games&club_id=eq.${CLUB_ID}`)||[])
+      .filter(m=>((m.t1_sets||0)+(m.t2_sets||0))>0);
+    const isTeam=type.startsWith('team:'); const fmt=isTeam?type.split(':')[1]:null; const size=isTeam?OBR_TEAM_SIZE[fmt]:null;
+    const agg={};
+    const add=(key,gf,ga,won)=>{ const a=agg[key]||(agg[key]={m:0,w:0,f:0,ag:0}); a.m++; if(won) a.w++; a.f+=gf; a.ag+=ga; };
+    mAll.forEach(m=>{ const A=obrSideNames(m,'t1'),B=obrSideNames(m,'t2'); const ga=m.t1_games||0, gb=m.t2_games||0;
+      if(isTeam){ if(A.length===size) add(A.slice().sort().join(' · '),ga,gb,ga>gb); if(B.length===size) add(B.slice().sort().join(' · '),gb,ga,gb>ga); }
+      else { A.forEach(n=>add(n,ga,gb,ga>gb)); B.forEach(n=>add(n,gb,ga,gb>ga)); } });
+    const rows=Object.entries(agg).map(([k,a])=>({name:k,...a,net:a.m?(a.f-a.ag)/a.m:0,wp:a.m?a.w/a.m*100:0,form:obrFormValue(a)}));
+    const qf=rows.filter(r=>r.m>=OBR_FORM_MIN).sort((a,b)=>(b.form-a.form)||(b.wp-a.wp)||(b.net-a.net));
+    const uf=rows.filter(r=>r.m<OBR_FORM_MIN).sort((a,b)=>(b.wp-a.wp)||(b.net-a.net)||(b.m-a.m));
+    let html='<div style="padding:10px 14px;background:rgba(15,110,86,.08);border:1px solid rgba(15,110,86,.30);border-radius:10px;margin:14px 12px 12px;font-size:12px;color:#0d4a38;line-height:1.5;">'
+      +(isTeam?`${title} — how this ${fmt.replace(/s$/,'')} performs <em>as a team</em>. Rated matches only. Minimum ${OBR_FORM_MIN} matches together.`:`Individual Form — overall performance across every format. Rated matches only (roll-ups excluded). Minimum ${OBR_FORM_MIN} matches.`)+'</div>';
+    const label=isTeam?({pairs:'Pair',triples:'Triple',fours:'Four'}[fmt]):'Player';
+    html+=`<table class="ladder-table"><thead><tr><th>${label}</th><th>Played</th><th>Won</th><th>Win %</th><th>Net shots / match</th><th>Form</th></tr></thead><tbody>`;
+    const frow=(r,style)=>`<tr style="${style}"><td>${r.name}</td><td>${r.m}</td><td>${r.w}</td><td>${r.wp.toFixed(0)}</td><td>${r.net>0?'+':''}${r.net.toFixed(1)}</td><td><strong>${r.m>=OBR_FORM_MIN?r.form.toFixed(3):'—'}</strong></td></tr>`;
+    qf.forEach(r=>{ html+=frow(r,''); });
+    if(uf.length){ html+=`<tr><td colspan="6" style="background:rgba(15,110,86,.10);color:#3a6b5c;font-size:11px;font-style:italic;padding:7px 12px;">Fewer than ${OBR_FORM_MIN} rated matches — shown for reference, not ranked</td></tr>`; uf.forEach(r=>{ html+=frow(r,'opacity:0.55;'); }); }
+    html+='</tbody></table>';
+    if(!rows.length) html+=`<div class="empty-state" style="padding:16px 0;"><p>No rated ${isTeam?fmt:'matches'} yet.</p></div>`;
+    document.getElementById('ladderContent').className=''; document.getElementById('ladderContent').innerHTML=html;
+    addExportBar('ladderContent','Form',title);
+  }catch(e){ document.getElementById('ladderContent').innerHTML='<div class="empty-state"><div class="icon">⚠️</div><p>Could not load form: '+(e.message||e)+'</p></div>'; }
 }
 
 </script>
