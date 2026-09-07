@@ -1740,7 +1740,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.06-17";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.07-18";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
@@ -8072,9 +8072,14 @@ async function renderOpenCards(){
   box.innerHTML=`<p class="sub" style="margin-bottom:10px;">Tap the card you played.</p>`+cards.map((c,i)=>{
     const A=obrSideNames(c,'t1').join(' · '), B=obrSideNames(c,'t2').join(' · ');
     const hc=c.handicap_shots?`<span class="amr-chip" style="background:#B9770E;">+${c.handicap_shots} to ${c.handicap_to==='t1'?'Side A':'Side B'}</span>`:'';
-    return `<div class="team-card" style="cursor:pointer;" onclick="obrPickCard(${i})">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="font-size:12px;color:#888;">${c.card_date}${c.rink?' · Rink '+c.rink:''} · ${c.match_type||''} ${c.match_format} · ${c.event}</div>${hc}</div>
+    const live=(c.ends_played>0)?`<span class="amr-chip" style="background:#0E3058;">${c.ends_played} ends · ${c.live_t1}–${c.live_t2}</span>`:'';
+    return `<div class="team-card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div style="font-size:12px;color:#888;">${c.card_date}${c.rink?' · Rink '+c.rink:''} · ${c.match_type||''} ${c.match_format} · ${c.event}</div><div>${live}${hc}</div></div>
       <div style="font-weight:700;color:#0d4a38;margin-top:4px;">${A}</div><div style="font-size:12px;color:#888;">v</div><div style="font-weight:700;color:#0d4a38;">${B}</div>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button type="button" class="btn btn-primary" style="flex:1;margin:0;padding:12px;font-size:15px;" onclick="obrScoreEnds(${i})">🎯 Score the ends</button>
+        <button type="button" class="btn btn-secondary" style="flex:1;margin:0;padding:12px;font-size:15px;" onclick="obrPickCard(${i})">✅ Enter result</button>
+      </div>
     </div>`; }).join('')+`<button class="btn btn-secondary" style="margin-top:8px;" onclick="renderStep1()">&larr; Back</button>`;
 }
 function obrPickCard(i){
@@ -8349,18 +8354,66 @@ async function doSubmit(btn){
   if(typeof loadRecent==='function') try{ loadRecent(); }catch(e){}
 }
 
-// ---- OBR RECENT MATCHES: bowls-aware (all names, shots not weight, peel/start shown) ----
+// ---- OBR RECENT MATCHES · DAY VIEW: games grouped by the day they were played; day chips to browse;
+//      open cards (and live end-by-end tallies) shown for the day. Falls back to a plain list on a quiet day. ----
 async function loadRecent(){
   try{
-    const data = await sbGet(`obr_matches?select=match_date,match_type,event,match_format,t1p1,t1p2,t1p3,t1p4,t2p1,t2p2,t2p3,t2p4,t1_sets,t2_sets,t1_games,t2_games,ends,peel,handicap_shots,handicap_to,submitted_by&order=match_date.desc,id.desc&limit=15&club_id=eq.${CLUB_ID}`);
+    const data = await sbGet(`obr_matches?select=id,match_date,match_type,event,match_format,t1p1,t1p2,t1p3,t1p4,t2p1,t2p2,t2p3,t2p4,t1_sets,t2_sets,t1_games,t2_games,ends,peel,handicap_shots,handicap_to,submitted_by&order=match_date.desc,id.desc&limit=80&club_id=eq.${CLUB_ID}`);
     recentMatchesData = data||[];
-    if(recentMatchesData.length===0){document.getElementById('homeRecentList').innerHTML='<div style="color:#888;font-size:12px;">No matches yet</div>';return;}
+    let cards=[]; try{ cards = await sbGet(`obr_cards?select=id,card_date,status,rink,event,match_type,match_format,t1p1,t1p2,t1p3,t1p4,t2p1,t2p2,t2p3,t2p4,handicap_shots,handicap_to,live_t1,live_t2,ends_played&status=eq.open&club_id=eq.${CLUB_ID}&order=card_date.desc,rink.asc`)||[]; }catch(e){}
+    window._obrOpenCardsHome=cards;
+    if(recentMatchesData.length===0 && cards.length===0){document.getElementById('homeRecentList').innerHTML='<div style="color:#888;font-size:12px;">No matches yet</div>';return;}
     renderRecentList();
   }catch(e){document.getElementById('homeRecentList').innerHTML='<div style="color:#888;font-size:12px;">Could not load: '+(e.message||e)+'</div>';}
   try{
     const hct = await sbGet(`obr_tournaments?select=name&club_id=eq.${CLUB_ID}&handicap=eq.true&limit=1`);
     if(hct && hct.length){ const w=document.getElementById('homeHcWrap'); if(w) w.style.display=''; }
   }catch(e){}
+}
+function obrDayLabel(d){ try{ const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'}); }catch(e){ return d; } }
+function obrMatchCard(m,idx){
+  const A=obrSideNames(m,'t1'), B=obrSideNames(m,'t2');
+  const aWin=(m.t1_games||0)>(m.t2_games||0), bWin=(m.t2_games||0)>(m.t1_games||0);
+  const nm=(arr,win)=>'<strong style="color:'+(win?'#0F6E56':'#333')+';">'+arr.join(' · ')+(win?' ✓':'')+'</strong>';
+  const score=(m.peel?'<span style="color:#B9770E;font-weight:800;">'+m.t1_games+'–'+m.t2_games+' peel</span>':(m.t1_games||0)+'–'+(m.t2_games||0));
+  return `
+  <div class="recent-item" onclick="toggleRecent(${idx})" id="recent_${idx}">
+    <div class="match-header">
+      <span class="match-type">${m.match_type||''}</span><span style="color:#888;font-size:11px;margin-left:4px;">${m.match_format||''}${m.ends?' · '+m.ends+' ends':''}</span>${obrTag(m.event)}
+      <span style="color:#0F6E56;font-size:11px;">▼</span>
+    </div>
+    ${ (A.length<=2 && B.length<=2)
+        ? `<div class="match-teams">${nm(A,aWin)} <span style="color:#555;font-weight:400;">${score}</span> ${nm(B,bWin)}</div>`
+        : `<div class="match-teams" style="line-height:1.5;">${nm(A,aWin)}<div style="font-size:13px;color:#555;">${score} shots</div>${nm(B,bWin)}</div>` }
+    <div class="match-detail" id="detail_${idx}" style="display:none;margin-top:6px;padding-top:6px;border-top:1px solid rgba(15,110,86,.30);"></div>
+  </div>`;
+}
+function obrOpenCardRow(c){
+  const A=obrSideNames(c,'t1').join(' · '), B=obrSideNames(c,'t2').join(' · ');
+  const live=(c.ends_played>0)?`<span class="amr-chip" style="background:#0E3058;">${c.ends_played}${c.ends_played===1?'st':c.ends_played===2?'nd':c.ends_played===3?'rd':'th'} end · ${c.live_t1}–${c.live_t2}</span>`:`<span class="amr-chip" style="background:#5a6e66;">not yet entered</span>`;
+  const hc=c.handicap_shots?`<span class="amr-chip" style="background:#B9770E;">+${c.handicap_shots} ${c.handicap_to==='t1'?'A':'B'}</span>`:'';
+  return `<div class="recent-item" style="border-style:dashed;" onclick="showScreen('entryScreen');setTimeout(()=>renderOpenCards(),50)">
+    <div class="match-header"><span class="match-type">${c.rink?'Rink '+c.rink:'Open card'}</span><span style="color:#888;font-size:11px;margin-left:4px;">${c.match_type||''} ${c.match_format||''}</span>${obrTag(c.event)}</div>
+    <div class="match-teams"><strong style="color:#333;">${A}</strong> <span style="color:#555;font-weight:400;">v</span> <strong style="color:#333;">${B}</strong></div>
+    <div class="amr-chiprow" style="justify-content:center;margin-top:4px;">${live}${hc}</div>
+  </div>`;
+}
+function renderRecentList(){
+  const byDay={}; const order=[];
+  (window._obrOpenCardsHome||[]).forEach(c=>{ const d=c.card_date; if(!byDay[d]){byDay[d]={m:[],c:[]};order.push(d);} byDay[d].c.push(c); });
+  recentMatchesData.forEach((m,idx)=>{ const d=m.match_date||''; if(!byDay[d]){byDay[d]={m:[],c:[]};order.push(d);} byDay[d].m.push(idx); });
+  order.sort((a,b)=>b.localeCompare(a));
+  const days=order.slice(0,8);
+  window._obrDay = (window._obrDay && days.includes(window._obrDay)) ? window._obrDay : days[0];
+  const chips=days.map(d=>{ const n=byDay[d].m.length+byDay[d].c.length; return `<button type="button" class="obr-chip${d===window._obrDay?' on':''}" onclick="window._obrDay='${d}';renderRecentList()">${obrDayLabel(d)}<span style="opacity:.75;font-weight:400;"> · ${n}</span></button>`; }).join('');
+  const d=window._obrDay, day=byDay[d]||{m:[],c:[]};
+  const classes=[...new Set(day.m.map(i=>recentMatchesData[i].event).concat(day.c.map(c=>c.event)))].filter(Boolean);
+  const rinks=day.c.map(c=>c.rink).filter(Boolean);
+  let html=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 10px;">${chips}</div>`;
+  html+=`<div style="font-size:12px;color:#3a6b5c;margin-bottom:8px;"><b>${obrDayLabel(d)}</b> · ${day.m.length} game${day.m.length===1?'':'s'} entered${day.c.length?` · ${day.c.length} card${day.c.length===1?'':'s'} open`:''}${classes.length?' · '+classes.join(', '):''}</div>`;
+  html+=day.c.map(obrOpenCardRow).join('');
+  html+=day.m.map(i=>obrMatchCard(recentMatchesData[i],i)).join('');
+  document.getElementById('homeRecentList').innerHTML=html;
 }
 function obrSideNames(m,side){ return [1,2,3,4].map(i=>m[side+'p'+i]).filter(Boolean); }
 function _obrOn(m,n){ return [m.t1p1,m.t1p2,m.t1p3,m.t1p4].includes(n); }
@@ -8584,6 +8637,66 @@ function otrUpdatePreview(){
       +(sg.shots>0?`<br><span style="color:#B9770E;font-weight:700;">Suggested start: +${sg.shots} to ${sg.to==='t1'?'Side A':'Side B'}</span> <span style="color:#666;font-size:11px;">— if the club plays this game with a handicap. Scratch play needs nothing.</span>`:'<br><span style="color:#666;font-size:11px;">Evenly matched — no start suggested.</span>');
     mp.style.display='';
   } else mp.style.display='none';
+}
+
+// ---- SCORE THE ENDS: end-by-end tally on an open card. Tap the side that won the end, then the shots.
+//      Saved to the card after every tap (Day board shows it live). Finishing hands the totals to the result step. ----
+function obrParseEnds(str){ return String(str||'').trim().split(/\s+/).filter(Boolean); }
+function obrTally(list){ let a=0,b=0,n=0; list.forEach(t=>{ if(t==='D') return; const side=t[0], v=parseInt(t.slice(1),10)||0; n++; if(side==='A') a+=v; else b+=v; }); return {a,b,n}; }
+function obrScoreEnds(i){
+  const c=window._obrOpenCards[i]; if(!c) return;
+  window._obrEndsCard=c; window._obrEnds=obrParseEnds(c.ends_json); window._obrEndsPick=null;
+  obrRenderEnds();
+}
+function obrRenderEnds(){
+  const c=window._obrEndsCard, list=window._obrEnds, t=obrTally(list), pick=window._obrEndsPick;
+  const A=obrSideNames(c,'t1'), B=obrSideNames(c,'t2'); const target=c.ends||null;
+  setStep(2);
+  const last=list.length?list[list.length-1]:null;
+  const hist=list.length?list.map((e,k)=>`<span style="display:inline-block;padding:2px 7px;margin:2px;border-radius:6px;font-size:11px;font-weight:700;background:${e==='D'?'#999':(e[0]==='A'?'#0F6E56':'#0E3058')};color:#fff;">${k+1}${e==='D'?' dead':': '+(e[0]==='A'?'A':'B')+' '+e.slice(1)}</span>`).join(''):'<span style="color:#888;font-size:12px;">No ends yet</span>';
+  const side=(nm,label,tot,me,col)=>`<div style="flex:1;text-align:center;padding:10px 6px;border-radius:12px;background:${col}14;border:2px solid ${col};">
+      <div style="font-size:11px;color:#555;">${label}</div><div style="font-size:13px;font-weight:700;color:#0d4a38;line-height:1.3;">${nm.join('<br>')}</div><div style="font-size:44px;font-weight:900;color:${col};line-height:1;margin-top:6px;">${tot}</div></div>`;
+  document.getElementById('entryContent').innerHTML=`
+    <div style="text-align:center;font-size:12px;color:#888;">${c.rink?'Rink '+c.rink+' · ':''}${c.event} · ${c.match_format}${c.handicap_shots?` · start +${c.handicap_shots} to ${c.handicap_to==='t1'?'Side A':'Side B'} (on the board, not in this tally)`:''}</div>
+    <div style="display:flex;gap:10px;margin:10px 0;">${side(A,'Side A',t.a,'A','#0F6E56')}${side(B,'Side B',t.b,'B','#0E3058')}</div>
+    <div style="text-align:center;font-size:16px;font-weight:800;color:#0d4a38;margin:6px 0 10px;">End ${t.n+1}${target?' of '+target:''}</div>
+    ${pick?`<div style="text-align:center;font-size:13px;color:#555;margin-bottom:6px;">${pick==='A'?'Side A':'Side B'} won the end — how many shots?</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">${[1,2,3,4,5,6,7,8].map(n=>`<button type="button" class="btn" style="margin:0;padding:16px 0;font-size:22px;font-weight:800;background:${pick==='A'?'#0F6E56':'#0E3058'};color:#fff;border-radius:12px;" onclick="obrEndShots(${n})">${n}</button>`).join('')}</div>
+      <button type="button" class="btn btn-secondary" style="margin-top:8px;" onclick="window._obrEndsPick=null;obrRenderEnds()">Cancel</button>`
+    :`<div style="display:flex;gap:10px;">
+        <button type="button" class="btn" style="flex:1;margin:0;padding:18px 6px;font-size:16px;font-weight:800;background:#0F6E56;color:#fff;border-radius:12px;" onclick="window._obrEndsPick='A';obrRenderEnds()">Side A won the end</button>
+        <button type="button" class="btn" style="flex:1;margin:0;padding:18px 6px;font-size:16px;font-weight:800;background:#0E3058;color:#fff;border-radius:12px;" onclick="window._obrEndsPick='B';obrRenderEnds()">Side B won the end</button>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="button" class="btn btn-secondary" style="flex:1;margin:0;padding:12px;" onclick="obrEndDead()">Dead end</button>
+        <button type="button" class="btn btn-secondary" style="flex:1;margin:0;padding:12px;" ${list.length?'':'disabled'} onclick="obrEndUndo()">Undo last</button>
+      </div>`}
+    <div style="margin-top:12px;padding:10px;border-radius:10px;background:rgba(15,110,86,.06);">${hist}</div>
+    <div id="endsSaveNote" style="text-align:center;font-size:11px;color:#888;margin-top:6px;"></div>
+    <button class="btn btn-primary" style="margin-top:12px;" ${t.n?'':'disabled'} onclick="obrEndsFinish()">✅ Game over — enter the result (${t.a}–${t.b}, ${t.n} ends)</button>
+    <button class="btn btn-secondary" style="margin-top:8px;" onclick="renderOpenCards()">&larr; Back to cards (tally is saved)</button>`;
+}
+function obrEndShots(n){ window._obrEnds.push(window._obrEndsPick+n); window._obrEndsPick=null; obrRenderEnds(); obrEndsSave(); }
+function obrEndDead(){ window._obrEnds.push('D'); obrRenderEnds(); obrEndsSave(); }
+function obrEndUndo(){ window._obrEnds.pop(); obrRenderEnds(); obrEndsSave(); }
+async function obrEndsSave(){
+  const c=window._obrEndsCard, list=window._obrEnds, t=obrTally(list); const note=document.getElementById('endsSaveNote');
+  try{
+    const resp=await fetch(SB_URL+"/functions/v1/obr_cards",{ method:"POST", headers:{ apikey:SB_ANON, Authorization:"Bearer "+SB_ANON, "Content-Type":"application/json" },
+      body:JSON.stringify({ action:'save_ends', club_id:CLUB_ID, card_id:c.id, ends_json:list.join(' '), live_t1:t.a, live_t2:t.b, ends_played:t.n }) });
+    const res=await resp.json().catch(()=>null);
+    if(note) note.textContent=(resp.ok&&res&&res.ok)?'Saved · '+new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}):'⚠️ Not saved — check connection';
+    c.ends_json=list.join(' '); c.live_t1=t.a; c.live_t2=t.b; c.ends_played=t.n;
+  }catch(e){ if(note) note.textContent='⚠️ Not saved — check connection'; }
+}
+function obrEndsFinish(){
+  const c=window._obrEndsCard, t=obrTally(window._obrEnds);
+  const i=(window._obrOpenCards||[]).indexOf(c); if(i<0) return;
+  obrPickCard(i);
+  // pre-fill from the tally: scratch shots (the start, if any, is on the board and gets added for display only)
+  entryData.ends=t.n; entryData._tallyA=t.a; entryData._tallyB=t.b;
+  setTimeout(()=>{ const a=document.getElementById('shotsA'), b=document.getElementById('shotsB');
+    if(a&&b){ let va=t.a, vb=t.b; if(entryData._cardHc){ if(entryData._cardHcTo==='t1') va+=entryData._cardHc; else vb+=entryData._cardHc; } a.value=va; b.value=vb; } },0);
 }
 
 </script>
