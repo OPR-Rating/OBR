@@ -1740,7 +1740,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.07-21";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.07-22";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
@@ -8140,7 +8140,7 @@ function renderStep2(){
     obrSlots(side).map((id,i)=>`<div class="field"><label>${pos[i]}</label>
       <input type="hidden" id="${id}_val" value="${entryData[id]||''}">
       <button type="button" class="btn player-pick${entryData[id]?' selected':''}" id="${id}_btn" onclick="openPlayerModal('${id}','${pos[i]} — ${label}')" style="width:100%;text-align:left;padding:14px;font-size:16px;border:1.5px solid rgba(15,110,86,.3);border-radius:10px;background:#fff;"><span id="${id}_lbl">${entryData[id]||'Tap to pick…'}</span></button>
-      <div id="${id}_rt" style="display:none;margin:-2px 0 8px 2px;"></div></div>`).join('')+`<div id="${side==='t1'?'otrPrev1':'otrPrev2'}" class="pair-preview" style="display:none;"></div></div>`;
+      <div id="${id}_rt" style="display:none;margin:-2px 0 8px 2px;"></div></div>`).join('')+`<div id="${side==='t1'?'otrPrev1':'otrPrev2'}" class="pair-preview" style="display:none;background:#fff;border:1.5px solid rgba(15,110,86,.3);border-radius:10px;padding:12px 14px;margin-top:4px;line-height:1.9;"></div></div>`;
   document.getElementById('entryContent').innerHTML=`
     <p class="sub" style="margin-bottom:10px;">${n===1?'Pick both players.':'Pick each side in playing order — lead first, skip last.'}</p>
     ${card('t1','Side A')}${card('t2','Side B')}
