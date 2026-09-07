@@ -865,7 +865,17 @@
             <input id="amName" placeholder="Full name" class="ac-field">
             <div class="ac-row" style="margin-bottom:9px;">
               <select id="amGender" class="ac-field" style="margin-bottom:0;"><option value="M">Male</option><option value="F">Female</option></select>
-              <input id="amRating" type="number" placeholder="Rating (e.g. 1200)" class="ac-field" style="margin-bottom:0;">
+              <select id="amBand" class="ac-field" style="margin-bottom:0;" onchange="document.getElementById('amRating').value=this.value;">
+                <option value="1650">Provincial / district rep · 1650</option>
+                <option value="1575">Experienced — skips, plays league · 1575</option>
+                <option value="1500" selected>Regular club bowler · 1500</option>
+                <option value="1425">Improver — 1–3 seasons · 1425</option>
+                <option value="1350">Novice — first season · 1350</option>
+              </select>
+            </div>
+            <div class="ac-row" style="margin-bottom:9px;align-items:center;">
+              <input id="amRating" type="number" value="1500" class="ac-field" style="margin-bottom:0;" placeholder="Starting rating">
+              <div style="font-size:11px;color:#7a6688;line-height:1.3;">Starting rating — same scale for men and ladies; graded by experience. The handicapper can type any number.</div>
             </div>
             <input id="amPin" inputmode="numeric" placeholder="4-digit PIN" class="ac-field">
             <button class="ac-btn ac-btn-primary" style="width:100%;" onclick="adminAddMember()">Add member</button>
@@ -876,7 +886,7 @@
           <div class="ac-card">
             <h4>Bulk add members (paste from Excel)</h4>
             <p style="font-size:12px;color:#7a6688;margin:0 0 8px;">Paste rows of <b>Name, Gender, Initial Rating, PIN</b> — one member per line. Copy 4 columns straight from Excel (tabs) or type comma-separated. Gender = M or F. Each player gets their own starting rating.</p>
-            <textarea id="bulkText" class="ac-field" style="min-height:150px;font-family:monospace;font-size:12px;" placeholder="John Smith, M, 1350, 1234&#10;Sarah Jones, F, 1180, 5678&#10;Mike Brown	M	1420	9012"></textarea>
+            <textarea id="bulkText" class="ac-field" style="min-height:150px;font-family:monospace;font-size:12px;" placeholder="Bands: 1650 rep · 1575 experienced · 1500 club · 1425 improver · 1350 novice&#10;John Smith, M, 1500, 1234&#10;Sarah Jones, F, 1425, 5678&#10;Mike Brown	M	1420	9012"></textarea>
             <button class="ac-btn ac-btn-primary" style="width:100%;" onclick="adminBulkAdd()">Add all pasted members</button>
             <div id="bulkMsg" class="ac-msg"></div>
           </div>
@@ -890,7 +900,7 @@
               <button class="ac-btn ac-btn-ghost" style="white-space:nowrap;" onclick="adminBulkReset('M')">Reset Men</button>
             </div>
             <div style="display:flex;gap:8px;align-items:center;">
-              <input id="resetLadiesVal" type="number" placeholder="All Ladies → e.g. 1300" class="ac-field" style="margin-bottom:0;flex:1;">
+              <input id="resetLadiesVal" type="number" placeholder="All Ladies → e.g. 1500" class="ac-field" style="margin-bottom:0;flex:1;">
               <button class="ac-btn ac-btn-ghost" style="white-space:nowrap;" onclick="adminBulkReset('F')">Reset Ladies</button>
             </div>
             <div id="resetMsg" class="ac-msg"></div>
@@ -1528,7 +1538,7 @@ async function adminAddMember(){
   const cid=document.getElementById('adminClubSelect').value;
   const name=document.getElementById('amName').value.trim();
   const gender=document.getElementById('amGender').value;
-  const rating=document.getElementById('amRating').value||1200;
+  const rating=document.getElementById('amRating').value||1500;
   const pin=document.getElementById('amPin').value.trim();
   const msg=document.getElementById('adminMsg');
   if(!name){ msg.innerHTML='<span style="color:#c0392b;">Name required.</span>'; return; }
@@ -1536,7 +1546,7 @@ async function adminAddMember(){
   if(!r.ok){ msg.innerHTML='<span style="color:#c0392b;">'+r.error+'</span>'; return; }
   msg.innerHTML='<span style="color:#1e8449;">Added '+name+'.</span>';
   _playersLoaded=false;   // roster changed — refresh cached player list on next open
-  document.getElementById('amName').value=''; document.getElementById('amRating').value=''; document.getElementById('amPin').value='';
+  document.getElementById('amName').value=''; document.getElementById('amRating').value=document.getElementById('amBand').value; document.getElementById('amPin').value='';
   adminLoadMembers();
 }
 
@@ -1740,7 +1750,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.07-23";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.07-26";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
@@ -8010,7 +8020,7 @@ button[onclick^="umpireFromEntry"],button[onclick^="mkOpen"]{display:none!import
 const OBR_FORMATS = {singles:{n:1,ends:0,label:'Singles (1 v 1) — to 21 shots'},pairs:{n:2,ends:18,label:'Pairs (2 v 2)'},triples:{n:3,ends:18,label:'Triples (3 v 3)'},fours:{n:4,ends:21,label:'Fours (4 v 4)'}};
 const OBR_CLASSES = [['Tabs-in','Tabs-in (drawn social)'],['Club Comp','Club competition'],['League','League rink'],['Roll-up','Roll-up (not rated)']];
 const OBR_POS = {1:['Player'],2:['Lead','Skip'],3:['Lead','Second','Skip'],4:['Lead','Second','Third','Skip']};
-function obrWeight(ev,ends){ const e=(ev||'').trim().toLowerCase(); if(e==='roll-up'||e==='roll up'||e==='practice') return 0; if(e==='tabs-in'||e==='tabs in'||e==='social') return 1; if(ends!=null&&ends>0&&ends<=12) return 1; return 2; }
+function obrWeight(ev,ends){ const e=(ev||'').trim().toLowerCase(); if(e==='roll-up'||e==='roll up'||e==='practice') return 0; if(e==='tabs-in'||e==='tabs in'||e==='social') return 1; if(ends!=null&&ends>0&&ends<=12) return 1; if(ends!=null&&ends>0&&ends<=17) return 2; return 3; }   // weight rule v3 — mirrors obr_submit_match
 function obrSlots(side){ const n=OBR_FORMATS[entryData.format||'fours'].n; return Array.from({length:n},(_,i)=>side+'p'+(i+1)); }
 function obrNames(side){ return obrSlots(side).map(id=>entryData[id]).filter(Boolean); }
 function obrSideLabel(side){ return obrNames(side).join(' · '); }
@@ -8273,7 +8283,7 @@ function renderStep4(){
   const players=[...obrNames('t1'),...obrNames('t2')];
   const opts=players.map(p=>`<option value="${p}">${p}</option>`).join('');
   const hcNote=entryData.hcShots?`<div style="text-align:center;font-size:12px;color:#888;padding:5px 0;">Start of +${entryData.hcShots} to ${entryData.hcTo==='t1'?'Side A':'Side B'} — scratch shots shown</div>`:'';
-  const wNote=W===0?'Roll-up — recorded, not rated':(peel?'Peel — recorded, ratings unchanged':(W===1?'Tabs-in weight':'Full competition weight'));
+  const wNote=W===0?'Roll-up — recorded, not rated':(peel?'Peel — recorded, ratings unchanged':(W===1?'Weight 1 — tabs-in / short game':(W===2?'Weight 2 — shortened competition match':'Weight 3 — full competition match')));
   document.getElementById('entryContent').innerHTML=`
     <div class="result-card ${t1w?'winner':(peel?'':'loser')}">
       <div>${t1w?'<div class="winner-label">Winner</div>':''}<div class="result-names">${obrNames('t1').join('<br>')}</div></div>
@@ -8306,8 +8316,8 @@ async function _submitMatchInner(){
   if(!submitter){ err.textContent='Please select your name.'; err.style.display='block'; return false; }
   err.style.display='none';
   const pin=document.getElementById('submitterPin').value;
-  // DUPLICATE FAILSAFE (family): same people, same event, in the last 30 entries.
-  try{
+  // DUPLICATE FAILSAFE (family): same people, same event, in the last 30 entries. Skipped when closing a card — the card is the proof.
+  if(!entryData._cardId) try{
     const key=arr=>arr.map(x=>(x||'').trim()).filter(Boolean).sort().join('|');
     const mine=key([...obrNames('t1'),...obrNames('t2')]);
     const recent=await sbGet(`obr_matches?select=match_date,t1p1,t1p2,t1p3,t1p4,t2p1,t2p2,t2p3,t2p4,submitted_by,event&club_id=eq.${CLUB_ID}&order=id.desc&limit=30`)||[];
@@ -8395,7 +8405,7 @@ function obrMatchCard(m,idx){
 }
 function obrOpenCardRow(c){
   const A=obrSideNames(c,'t1').join(' · '), B=obrSideNames(c,'t2').join(' · ');
-  const live=(c.ends_played>0)?`<span class="amr-chip" style="background:#0E3058;">${c.ends_played}${c.ends_played===1?'st':c.ends_played===2?'nd':c.ends_played===3?'rd':'th'} end · ${c.live_t1}–${c.live_t2}</span>`:`<span class="amr-chip" style="background:#5a6e66;">not yet entered</span>`;
+  const live=(c.ends_played>0)?`<span class="amr-chip" style="background:#0E3058;">${c.ends_played}${(n=>{const v=n%100; if(v>=11&&v<=13) return 'th'; return ['th','st','nd','rd'][n%10]||'th';})(c.ends_played)} end · ${c.live_t1}–${c.live_t2}</span>`:`<span class="amr-chip" style="background:#5a6e66;">not yet entered</span>`;
   const hc=c.handicap_shots?`<span class="amr-chip" style="background:#B9770E;">+${c.handicap_shots} ${c.handicap_to==='t1'?'A':'B'}</span>`:'';
   return `<div class="recent-item" style="border-style:dashed;" onclick="showScreen('entryScreen');setTimeout(()=>renderOpenCards(),50)">
     <div class="match-header"><span class="match-type">${c.rink?'Rink '+c.rink:'Open card'}</span><span style="color:#888;font-size:11px;margin-left:4px;">${c.match_type||''} ${c.match_format||''}</span>${obrTag(c.event)}</div>
@@ -8433,32 +8443,14 @@ function obrTag(ev){
   if(e==='ladder match') return pill('L','#c4e000','#2a3000');
   return pill('T','#0F6E56','#fff');
 }
-function renderRecentList(){
-  document.getElementById('homeRecentList').innerHTML=recentMatchesData.map((m,idx)=>{
-    const A=obrSideNames(m,'t1'), B=obrSideNames(m,'t2');
-    const aWin=(m.t1_games||0)>(m.t2_games||0), bWin=(m.t2_games||0)>(m.t1_games||0);
-    const nm=(arr,win)=>'<strong style="color:'+(win?'#0F6E56':'#333')+';">'+arr.join(' · ')+(win?' ✓':'')+'</strong>';
-    const score=(m.peel?'<span style="color:#B9770E;font-weight:800;">'+m.t1_games+'–'+m.t2_games+' peel</span>':(m.t1_games||0)+'–'+(m.t2_games||0));
-    return `
-    <div class="recent-item" onclick="toggleRecent(${idx})" id="recent_${idx}">
-      <div class="match-header">
-        <span class="match-date">${m.match_date||''}</span>
-        <span class="match-type">${m.match_type||''}</span><span style="color:#888;font-size:11px;margin-left:4px;">${m.match_format||''}</span>${obrTag(m.event)}
-        <span style="color:#0F6E56;font-size:11px;">▼</span>
-      </div>
-      ${ (A.length<=2 && B.length<=2)
-          ? `<div class="match-teams">${nm(A,aWin)} <span style="color:#555;font-weight:400;">${score}</span> ${nm(B,bWin)}</div>`
-          : `<div class="match-teams" style="line-height:1.5;">${nm(A,aWin)}<div style="font-size:13px;color:#555;">${score} shots</div>${nm(B,bWin)}</div>` }
-      <div class="match-detail" id="detail_${idx}" style="display:none;margin-top:6px;padding-top:6px;border-top:1px solid rgba(15,110,86,.30);"></div>
-    </div>`;}).join('');
-}
+// (v2 two-slot renderRecentList removed in v24 — the Day view renderer above is authoritative)
 async function toggleRecent(idx){
   const detail=document.getElementById('detail_'+idx);
   const arrow=document.getElementById('recent_'+idx).querySelector('span:last-child');
   if(detail.style.display==='none'){
     const m=recentMatchesData[idx]; detail.style.display='block'; arrow.textContent='▲';
     const W=Math.max(m.t1_sets||0,m.t2_sets||0);
-    const wTxt=W===0?'not rated':(W===1?'weight 1 (tabs-in)':'weight 2 (competition)');
+    const wTxt=W===0?'not rated':(W===1?'weight 1 (tabs-in / short)':(W===2?'weight 2 (shortened comp)':'weight 3 (full competition)'));
     const hc=m.handicap_shots?(' · start +'+m.handicap_shots+' to '+(m.handicap_to==='t1'?'Side A':'Side B')+', scratch shown'):'';
     // OPR-style result pills: each side's shots in its own colour (green won / red lost / amber peel), ends chip, delta chip
     const A=obrSideNames(m,'t1'), B=obrSideNames(m,'t2'); const ga=m.t1_games||0, gb=m.t2_games||0;
