@@ -991,7 +991,7 @@
   <div class="screen hidden" id="entryScreen">
     <div class="header">
       <button class="back-btn" onclick="goHome()">&#8592;</button>
-      <h1>Enter Score</h1>
+      <h1>Scorecard</h1>
     </div>
     <div id="offlineBanner" style="display:none;background:#c0392b;color:#fff;text-align:center;padding:8px 12px;font-size:12px;font-weight:600;">⚠️ You are offline — scores cannot be submitted until you reconnect.</div>
     <div class="step-indicator">
@@ -1740,7 +1740,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.07-20";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.07-21";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
@@ -8129,7 +8129,8 @@ async function step1Next(){
         event=document.getElementById('matchEvent').value, format=document.getElementById('matchFormat').value;
   const endsRaw=document.getElementById('matchEnds').value; const ends=(format==='singles')?null:(endsRaw?parseInt(endsRaw,10):null);
   if(!date||!type||!event||!format){ document.getElementById('err1').style.display='block'; return; }
-  entryData={date,type,event,format,ends};
+  const _mode=(entryData&&entryData.mode)||'result';
+  entryData={mode:_mode,date,type,event,format,ends};
   renderStep2();
 }
 function renderStep2(){
@@ -8626,10 +8627,10 @@ function otrUpdatePreview(){
   const strength={};
   ['t1','t2'].forEach(side=>{
     const ids=obrSlots(side); const names=ids.map(id=>((document.getElementById(id+'_val')||{}).value||'').trim());
-    ids.forEach((id,i)=>{ const el=document.getElementById(id+'_rt'); if(!el) return; if(names[i]){ el.style.display=''; el.innerHTML=`<span class="amr-chip" style="background:#0F6E56;">Rating ${Math.round(R(names[i]))}</span><span class="amr-chip" style="background:#5a6e66;">Lvl ${(R(names[i])/200).toFixed(1)}</span>`; } else el.style.display='none'; });
+    ids.forEach((id,i)=>{ const el=document.getElementById(id+'_rt'); if(!el) return; if(names[i]){ el.style.display=''; el.innerHTML=`<span class="amr-chip" style="background:#0F6E56;margin-right:6px;">Rating ${Math.round(R(names[i]))}</span><span class="amr-chip" style="background:#5a6e66;">Lvl ${(R(names[i])/200).toFixed(1)}</span>`; } else el.style.display='none'; });
     const prev=document.getElementById(side==='t1'?'otrPrev1':'otrPrev2'); if(!prev) return;
     if(names.every(Boolean)){ const v=_obrTeamStrength(names.map(R)); strength[side]=v;
-      prev.innerHTML=(names.length>1?'Side strength · ':'Rating · ')+`<b style="color:#D35400;">${Math.round(v)}</b> · Lvl ${(v/200).toFixed(1)}`+(names.length>1?` <span style="color:#888;font-size:11px;">(${names.length===2?'60/40':names.length===3?'45/33/22':'40/28/20/12'} strongest-first)</span>`:'');
+      prev.innerHTML=`<span class="amr-chip" style="background:#D35400;margin-right:6px;">${names.length>1?'Side strength':'Rating'} ${Math.round(v)}</span><span class="amr-chip" style="background:#5a6e66;margin-right:6px;">Lvl ${(v/200).toFixed(1)}</span>`+(names.length>1?`<span class="amr-chip" style="background:#e8f0ec;color:#3a6b5c;">${names.length===2?'60/40':names.length===3?'45/33/22':'40/28/20/12'} strongest-first</span>`:'');
       prev.style.display='block'; } else prev.style.display='none';
   });
   const mp=document.getElementById('obrMatchPrev'); if(!mp) return;
