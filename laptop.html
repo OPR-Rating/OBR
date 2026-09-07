@@ -628,22 +628,22 @@
       </div>
       <div id="formMenu" style="display:none;margin-top:8px;">
         <div style="padding:12px 14px;background:rgba(15,110,86,.08);border:1px solid rgba(15,110,86,.30);border-radius:10px;margin:0 0 10px;font-size:12px;color:#0d4a38;line-height:1.5;">
-          <strong>What is Form?</strong> Your overall performance — not just how often you win, but who you played, how convincingly, and how by much. Requires a minimum of 12 sets to appear.
+          <strong>What is Form?</strong> Your overall performance — not just how often you win, but how convincingly. Rated matches only (roll-ups excluded). Needs 5 matches to appear.
         </div>
         <button class="menu-btn" id="formGuideBtn" style="border-color:#12855F;font-size:13px;margin-bottom:10px;" onclick="toggleFormGuide()">📖 Understanding the Form Wall &nbsp;<span id="formGuideChevron" style="font-size:12px;">▼</span></button>
         <div id="formGuideBox" style="display:none;padding:14px;background:#fff;border:1px solid rgba(15,110,86,.30);border-radius:10px;margin:0 0 12px;font-size:12px;color:#3a2348;line-height:1.6;">
           <p style="margin:0 0 8px;"><em>A quick guide to what each column means.</em></p>
           <p style="margin:0 0 6px;"><strong>The columns explained</strong></p>
           <ul style="margin:0 0 10px;padding-left:18px;">
-            <li><strong>Player / Pair</strong> — the player's name, or the pairing.</li>
-            <li><strong>Sets</strong> — total sets played (must reach 12 to appear).</li>
-            <li><strong>Sets Won</strong> — how many of those sets were won.</li>
-            <li><strong>Win %</strong> — share of sets won.</li>
-            <li><strong>Game Diff / Set</strong> — average game margin per set. 3.57 means winning sets by about 3–4 games on average. Positive = usually wins convincingly; negative = usually loses.</li>
+            <li><strong>Player / Team</strong> — the member, or the pair / triple / four that played together.</li>
+            <li><strong>Played</strong> — rated matches played (5 to appear).</li>
+            <li><strong>Won</strong> — how many of those were won.</li>
+            <li><strong>Win %</strong> — share of matches won.</li>
+            <li><strong>Net shots / match</strong> — average shot margin per match. +3.5 means winning by 3–4 shots on average. Positive = usually wins convincingly; negative = usually loses.</li>
             <li><strong>Form</strong> — the overall performance score (typically 0.0–1.0). It is <em>not</em> a win percentage. The headline number the wall is sorted by.</li>
           </ul>
           <p style="margin:0 0 4px;"><strong>Reading Form (typically 0.0 – 1.0)</strong></p>
-          <p style="margin:0 0 8px;">It blends how often you win sets (40%), your game margin per set (40%), and your games won per set (20%) — then adjusts for how many sets you've played (more = more reliable). It is not the same as Win %: winning narrowly scores lower than winning convincingly. Rough guide:</p>
+          <p style="margin:0 0 8px;">It blends how often you win (40%), your net shots per match (40%), and your share of all shots (20%). It is not the same as Win %: winning narrowly scores lower than winning convincingly. Rough guide:</p>
           <ul style="margin:0 0 10px;padding-left:18px;">
             <li><strong>0.70+</strong> — Strong, performing very well.</li>
             <li><strong>0.55–0.70</strong> — Good, winning more than losing.</li>
@@ -652,7 +652,7 @@
             <li><strong>Below 0</strong> — Losing by wide shot margins.</li>
           </ul>
           <p style="margin:0 0 4px;"><strong>Why Form, not just Win %?</strong></p>
-          <p style="margin:0;">Win % treats a narrow 17–16 win the same as a 28–8 rout. Form rewards convincing performances and accounts for opponent strength — a fairer picture of how someone is actually playing. For doubles, Form shows how a <strong>partnership performs as a team</strong>.</p>
+          <p style="margin:0;">Win % treats a narrow 17–16 win the same as a 28–8 rout. Form rewards convincing performances — a fairer picture of how someone is actually bowling. For pairs, triples and fours, Form shows how the <strong>team performs together</strong>.</p>
         </div>
         <div class="ladders-grid one-col">
           <button class="menu-btn" onclick="loadFormWall('individual','Individual Form')">Individual Form</button>
@@ -715,21 +715,21 @@
         <button class="menu-btn form-toggle" id="tFormToggleBtn" style="border-color:#12855F;box-shadow:0 0 12px rgba(125,60,152,0.4);font-weight:700;" onclick="toggleTFormMenu()">Tournament Form &nbsp;<span id="tFormChevron" style="font-size:12px;">▼</span></button>
       </div>
       <div id="tFormMenu" style="display:none;margin-top:8px;">
-        <div style="padding:12px 14px;background:rgba(15,110,86,.08);border:1px solid rgba(15,110,86,.30);border-radius:10px;margin:0 0 12px;font-size:12px;color:#0d4a38;line-height:1.55;"><strong>Tournament Form</strong> shows how each pairing is performing <em>within this tournament</em> — team form computed from tournament matches only.</div>
+        <div style="padding:12px 14px;background:rgba(15,110,86,.08);border:1px solid rgba(15,110,86,.30);border-radius:10px;margin:0 0 12px;font-size:12px;color:#0d4a38;line-height:1.55;"><strong>Tournament Form</strong> shows how each entry is performing <em>within this tournament</em> — team form computed from tournament matches only.</div>
         <button class="menu-btn" id="tFormGuideBtn" style="border-color:#12855F;font-size:13px;margin-bottom:10px;" onclick="toggleTFormGuide()">📖 Understanding the Form Wall &nbsp;<span id="tFormGuideChevron" style="font-size:12px;">▼</span></button>
         <div id="tFormGuideBox" style="display:none;padding:14px;background:#fff;border:1px solid rgba(15,110,86,.30);border-radius:10px;margin:0 0 12px;font-size:12px;color:#3a2348;line-height:1.6;">
           <p style="margin:0 0 8px;"><em>A quick guide to what each column means.</em></p>
           <p style="margin:0 0 6px;"><strong>The columns explained</strong></p>
           <ul style="margin:0 0 10px;padding-left:18px;">
-            <li><strong>Player / Pair</strong> — the player's name, or the pairing.</li>
-            <li><strong>Sets</strong> — total sets played (must reach 12 to appear).</li>
-            <li><strong>Sets Won</strong> — how many of those sets were won.</li>
-            <li><strong>Win %</strong> — share of sets won.</li>
-            <li><strong>Game Diff / Set</strong> — average game margin per set. Positive = usually wins convincingly; negative = usually loses.</li>
+            <li><strong>Player / Team</strong> — the member, or the pair / triple / four that played together.</li>
+            <li><strong>Played</strong> — rated matches played (5 to appear).</li>
+            <li><strong>Won</strong> — how many of those were won.</li>
+            <li><strong>Win %</strong> — share of matches won.</li>
+            <li><strong>Net shots / match</strong> — average shot margin per match. Positive = usually wins convincingly; negative = usually loses.</li>
             <li><strong>Form</strong> — the overall performance score (typically 0.0–1.0). It is <em>not</em> a win percentage. The headline number the wall is sorted by.</li>
           </ul>
           <p style="margin:0 0 4px;"><strong>Reading Form (typically 0.0 – 1.0)</strong></p>
-          <p style="margin:0 0 8px;">It blends how often you win sets (40%), your game margin per set (40%), and your games won per set (20%) — then adjusts for how many sets you've played (more = more reliable). It is not the same as Win %: winning narrowly scores lower than winning convincingly. Rough guide:</p>
+          <p style="margin:0 0 8px;">It blends how often you win (40%), your net shots per match (40%), and your share of all shots (20%). It is not the same as Win %: winning narrowly scores lower than winning convincingly. Rough guide:</p>
           <ul style="margin:0 0 10px;padding-left:18px;">
             <li><strong>0.70+</strong> — Strong, performing very well.</li>
             <li><strong>0.55–0.70</strong> — Good, winning more than losing.</li>
@@ -738,7 +738,7 @@
             <li><strong>Below 0</strong> — Losing by wide shot margins.</li>
           </ul>
           <p style="margin:0 0 4px;"><strong>Why Form, not just Win %?</strong></p>
-          <p style="margin:0;">Win % treats a narrow win the same as a crushing one, and ignores who you played. Form rewards convincing performances and accounts for opponent strength. For doubles, Form shows how a <strong>partnership performs as a team</strong>.</p>
+          <p style="margin:0;">Win % treats a narrow win the same as a crushing one, and ignores who you played. Form rewards convincing performances. For pairs, triples and fours, Form shows how the <strong>team performs together</strong>.</p>
         </div>
         <div class="ladders-grid one-col" id="tFormButtons"></div>
       </div>
@@ -766,30 +766,35 @@
     <div class="screen-content">
       <div class="about-hero">
         <h2>Open Bowls Rating</h2>
-        <p>Designed for All Sorts of Combined pairings</p>
+        <p>One rating for every member · singles, pairs, triples and fours</p>
       </div>
 
       <div class="about-section">
         <h3>What Is OBR?</h3>
-        <p>Open Bowls Rating (OBR) is an independent, transparent rating system designed for club tennis — singles and doubles alike. Built on the proven OBR engine, OBR rates every player and every pairing on their own merits, for the realities of club tennis where partners change, formats vary, and match volume is limited.</p>
-        <p>OBR is open by design. Every formula, every weighting, and every adjustment threshold is explainable to any player, administrator, or partner. There are no black boxes.</p>
+        <p>Open Bowls Rating (OBR) is an independent, transparent rating system for club lawn bowls — singles, pairs, triples and fours alike. Built on the proven OPR engine used for padel and tennis, OBR rates every member on their own merits, for the realities of club bowls where teams are drawn from the hat, formats change from day to day, and a season's play is a handful of competitions and a great many tabs-in afternoons.</p>
+        <p>OBR is open by design. Every formula, every weighting, and every threshold is explainable to any member, handicapper or committee. There are no black boxes.</p>
       </div>
 
       <div class="about-section">
         <h3>How Ratings Work</h3>
-        <p>Every match updates your rating automatically. The system considers not just whether you won, but how convincingly you won — set margins, game differentials, and how surprising the result was given the teams' ratings.</p>
-        <p>Bigger upsets earn more points. Dominant victories earn more than narrow wins. Playing more matches builds confidence in your rating over time.</p>
+        <p>Every card updates your rating automatically. The system considers not just whether you won, but how convincingly — the shot margin — and how surprising the result was given the two sides' strengths.</p>
+        <p>Bigger upsets earn more. A close loss to a stronger side costs very little. A full competition match counts three times a tabs-in game; a roll-up is recorded but never rated. A peel moves nothing.</p>
       </div>
 
       <div class="about-section">
-        <h3>Match Types</h3>
+        <h3>Formats</h3>
         <div>
-          <span class="about-badge">Men's</span>
-          <span class="about-badge">Ladies</span>
-          <span class="about-badge">Mixed</span>
-          <span class="about-badge">All Sorts</span>
+          <span class="about-badge">Singles</span>
+          <span class="about-badge">Pairs</span>
+          <span class="about-badge">Triples</span>
+          <span class="about-badge">Fours</span>
         </div>
-        <p style="margin-top:8px;">OBR handles any combination — singles, two men, two women, mixed gender, or any All Sorts configuration. Doubles pairs use a weighted rating that gives more weight to the stronger partner, reflecting their greater influence on the match; singles are rated on the individual alone.</p>
+        <p style="margin-top:8px;">You have one rating, earned across every format you play. A team's strength is derived live from its members — pairs 60/40, triples 45/33/22, fours 40/28/20/12, strongest member first — so the side led by a strong skip is expected to do more, and every member of a side moves by the same amount.</p>
+      </div>
+
+      <div class="about-section">
+        <h3>Handicaps</h3>
+        <p>OBR suggests a start on the board from the two sides' strengths; the club's handicapper has the final say. Results are always rated on the scratch score, so a start never touches anyone's rating.</p>
       </div>
 
       <div class="about-section">
@@ -799,15 +804,15 @@
 
       <div class="about-section">
         <h3>Design & Intellectual Property</h3>
-        <p>OBR was conceived, designed, and built by <strong>Andre Farrell</strong>. The rating methodology, formula architecture, weighting system, Net Performance Index, and Star Performer Index are original works developed exclusively by Andre Farrell.</p>
+        <p>OBR was conceived, designed, and built by <strong>Andre Farrell</strong>. The rating methodology, formula architecture, team-strength derivation, weighting system and handicap derivation are original works developed exclusively by Andre Farrell.</p>
         <p>This system may not be copied, reproduced, or commercialised without the express written permission of the designer.</p>
         <p><strong>© 2026 Andre Farrell. All rights reserved.</strong></p>
       </div>
 
       <div class="about-section">
         <h3>Version</h3>
-        <p id="aboutVersion">OBR Version 2.0 — June 2026</p>
-        <p>Built with passion for the game of tennis.</p>
+        <p id="aboutVersion">OBR — September 2026</p>
+        <p>Built with passion for the game of bowls.</p>
       </div>
 
       <div class="copyright">© 2026 Andre Farrell · Open Bowls Rating · All Rights Reserved</div>
@@ -857,7 +862,7 @@
         <div class="ac-room active" id="acRoomMembers">
           <div class="ac-card">
             <h4>Current members</h4>
-            <p style="font-size:11px;color:#7a6688;margin:0 0 8px;">Note: editing a member's <b>initial rating</b> re-bases that player and automatically recomputes the club's ratings.</p>
+            <p style="font-size:11px;color:#7a6688;margin:0 0 8px;">Note: editing a member's <b>starting rating</b> re-bases that member and automatically recomputes the club's ratings.</p>
             <div id="adminMembers" style="font-size:13px;"></div>
           </div>
           <div class="ac-card">
@@ -931,7 +936,7 @@
             <input id="atName" placeholder="Tournament name (e.g. Summer Swing)" class="ac-field">
             <select id="atType" class="ac-field" onchange="atToggleType()">
               <option value="external">External — OBR tracks stats only</option>
-              <option value="internal">Internal — OBR runs it (pairings &amp; rounds)</option>
+              <option value="internal">Internal — OBR runs it (draws &amp; rounds)</option>
             </select>
             <div id="atFormatBlock" style="display:none;">
               <label style="font-size:12px;color:#5aa98d;font-weight:700;">Format</label>
@@ -948,10 +953,10 @@
                 <div style="font-size:11px;color:#7ba392;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin:4px 0 4px;">Singles</div>
                 <div class="at-divrow"><label><input type="checkbox" id="atDivMenSingles" onchange="atSyncCap('MenSingles')"> Men's Singles</label><input id="atCapMenSingles" type="number" min="2" step="1" placeholder="cap" class="ac-capf" disabled></div>
                 <div class="at-divrow"><label><input type="checkbox" id="atDivLadiesSingles" onchange="atSyncCap('LadiesSingles')"> Ladies Singles</label><input id="atCapLadiesSingles" type="number" min="2" step="1" placeholder="cap" class="ac-capf" disabled></div>
-                <div style="font-size:11px;color:#7ba392;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin:10px 0 4px;">Doubles</div>
-                <div class="at-divrow"><label><input type="checkbox" id="atDivMen" onchange="atSyncCap('Men')"> Men's Doubles</label><input id="atCapMen" type="number" min="4" step="2" placeholder="cap" class="ac-capf" disabled></div>
-                <div class="at-divrow"><label><input type="checkbox" id="atDivLadies" onchange="atSyncCap('Ladies')"> Ladies Doubles</label><input id="atCapLadies" type="number" min="4" step="2" placeholder="cap" class="ac-capf" disabled></div>
-                <div class="at-divrow"><label><input type="checkbox" id="atDivMixed" onchange="atSyncCap('Mixed')"> Mixed Doubles</label><input id="atCapMixed" type="number" min="4" step="2" placeholder="cap" class="ac-capf" disabled></div>
+                <div style="font-size:11px;color:#7ba392;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin:10px 0 4px;">Team events (pairs / triples / fours — format chosen above)</div>
+                <div class="at-divrow"><label><input type="checkbox" id="atDivMen" onchange="atSyncCap('Men')"> Men's</label><input id="atCapMen" type="number" min="4" step="2" placeholder="cap" class="ac-capf" disabled></div>
+                <div class="at-divrow"><label><input type="checkbox" id="atDivLadies" onchange="atSyncCap('Ladies')"> Ladies</label><input id="atCapLadies" type="number" min="4" step="2" placeholder="cap" class="ac-capf" disabled></div>
+                <div class="at-divrow"><label><input type="checkbox" id="atDivMixed" onchange="atSyncCap('Mixed')"> Mixed</label><input id="atCapMixed" type="number" min="4" step="2" placeholder="cap" class="ac-capf" disabled></div>
                 <div class="at-divrow"><label><input type="checkbox" id="atDivAllSorts" onchange="atSyncCap('AllSorts')"> All Sorts</label><input id="atCapAllSorts" type="number" min="4" step="2" placeholder="cap" class="ac-capf" disabled></div>
               </div>
             </div>
@@ -1220,23 +1225,23 @@ async function adminLoadMembers(){
   const r=await adminCall('list_members',{ club_id:Number(cid) });
   if(!r.ok){ box.innerHTML='<span style="color:#c0392b;">'+r.error+'</span>'; return; }
   if(r.members.length===0){ box.innerHTML='<div style="color:#888;padding:6px 0;">No members yet.</div>'; return; }
-  // Pull sets-played per member (from player_results) so an admin can spot under-12-set players after a bulk reset.
+  // Matches played per member (rated matches only) so the handicapper can spot unproven starting ratings.
   const setsByName={};
   try{
-    const pr=await sbGet('obr_player_results?select=name,sets_played&club_id=eq.'+Number(cid))||[];
-    pr.forEach(p=>{ setsByName[p.name]=p.sets_played||0; });
+    const mAll=await sbGet('obr_matches?select=t1p1,t1p2,t1p3,t1p4,t2p1,t2p2,t2p3,t2p4,t1_sets,t2_sets&club_id=eq.'+Number(cid))||[];
+    mAll.forEach(m=>{ if(((m.t1_sets||0)+(m.t2_sets||0))===0) return; [m.t1p1,m.t1p2,m.t1p3,m.t1p4,m.t2p1,m.t2p2,m.t2p3,m.t2p4].filter(Boolean).forEach(n=>{ setsByName[n]=(setsByName[n]||0)+1; }); });
   }catch(e){}
-  let html='<table class="ladder-table"><thead><tr><th>Name</th><th>G</th><th>Rating</th><th>Sets</th><th>PIN</th><th></th></tr></thead><tbody>';
+  let html='<table class="ladder-table"><thead><tr><th>Name</th><th>G</th><th>Start rating</th><th>Played</th><th></th></tr></thead><tbody>';
   r.members.forEach(m=>{
     const sets = setsByName[m.name]||0;
-    const lowFlag = sets<12 ? ' style="color:#c0392b;font-weight:700;" title="Under 12 sets — not yet proven; consider adjusting initial rating"' : '';
+    const lowFlag = sets<5 ? ' style="color:#c0392b;font-weight:700;" title="Under 5 rated matches — starting rating not yet proven"' : '';
     html+='<tr><td>'+m.name+'</td><td>'+m.gender+'</td><td>'+Math.round(m.initial_rating)+'</td>'
-      +'<td'+lowFlag+'>'+sets+(sets<12?' ⚠':'')+'</td><td>'+(m.pin||'—')+'</td>'
+      +'<td'+lowFlag+'>'+sets+(sets<5?' ⚠':'')+'</td>'
       +'<td style="white-space:nowrap;"><button onclick="adminEditMember('+m.id+',\''+m.name.replace(/'/g,"\\'")+'\','+m.initial_rating+',\''+(m.pin||'')+'\')" style="background:none;border:none;color:#0F6E56;cursor:pointer;">edit</button> '
       +'<button onclick="adminDeleteMember('+m.id+',\''+m.name.replace(/'/g,"\\'")+'\')" style="background:none;border:none;color:#c0392b;cursor:pointer;">del</button></td></tr>';
   });
   html+='</tbody></table>';
-  html+='<div style="font-size:11px;color:#7a6688;margin-top:6px;">⚠ = under 12 sets played (not yet proven — a good candidate for a manual initial-rating check after a bulk reset).</div>';
+  html+='<div style="font-size:11px;color:#7a6688;margin-top:6px;">⚠ = under 5 rated matches — the starting rating is still doing most of the work; worth a handicapper\'s check.</div>';
   box.innerHTML=html;
   adminLoadTournaments();
 }
@@ -1354,8 +1359,8 @@ function adminSetStr(m){ return (m.set_scores||'').split(',').map(s=>s.trim()).f
 function adminExportPicked(){
   const rows=adminPickedRows(); if(!rows) return;
   const esc=v=>{ v=(v==null?'':String(v)); return (/[",\n]/.test(v))?'"'+v.replace(/"/g,'""')+'"':v; };
-  let csv='Date,Match Type,Event,Team 1,Sets,Team 2,Sets,Set Scores,Entered by\n';
-  rows.forEach(m=>{ csv+=[m.match_date,m.match_type,(m.event||'Social'),sideName(m.t1p1,m.t1p2),m.t1_sets,sideName(m.t2p1,m.t2p2),m.t2_sets,adminSetStr(m),(m.submitted_by||'')].map(esc).join(',')+'\n'; });
+  let csv='Date,Category,Class,Side A,Shots,Side B,Shots,Weight,Ends,Entered by\n';
+  rows.forEach(m=>{ csv+=[m.match_date,m.match_type,(m.event||'Tabs-in'),obrSideNames(m,'t1').join(' · '),m.t1_games,obrSideNames(m,'t2').join(' · '),m.t2_games,Math.max(m.t1_sets||0,m.t2_sets||0),(m.ends||''),(m.submitted_by||'')].map(esc).join(',')+'\n'; });
   const today=new Date().toISOString().slice(0,10);
   downloadCSV('OPR_'+CLUB_NAME.replace(/\s+/g,'_')+'_Matches_'+today+'.csv', csv);
 }
@@ -1364,8 +1369,8 @@ function adminPrintPicked(){
   let box=document.getElementById('admPrintBox');
   if(!box){ box=document.createElement('div'); box.id='admPrintBox'; box.style.display='none'; document.body.appendChild(box); }
   const eh=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-  let t='<table class="ladder-table"><thead><tr><th>Date</th><th>Type</th><th>Event</th><th>Team 1</th><th>Sets</th><th>Team 2</th><th>Sets</th><th>Set Scores</th><th>Entered by</th></tr></thead><tbody>';
-  rows.forEach(m=>{ t+='<tr><td>'+eh(m.match_date)+'</td><td>'+eh(m.match_type)+'</td><td>'+eh(m.event||'Social')+'</td><td>'+eh(sideName(m.t1p1,m.t1p2))+'</td><td>'+eh(m.t1_sets)+'</td><td>'+eh(sideName(m.t2p1,m.t2p2))+'</td><td>'+eh(m.t2_sets)+'</td><td>'+eh(adminSetStr(m))+'</td><td>'+eh(m.submitted_by||'')+'</td></tr>'; });
+  let t='<table class="ladder-table"><thead><tr><th>Date</th><th>Category</th><th>Class</th><th>Side A</th><th>Shots</th><th>Side B</th><th>Shots</th><th>Wt</th><th>Ends</th><th>Entered by</th></tr></thead><tbody>';
+  rows.forEach(m=>{ t+='<tr><td>'+eh(m.match_date)+'</td><td>'+eh(m.match_type)+'</td><td>'+eh(m.event||'Tabs-in')+'</td><td>'+eh(obrSideNames(m,'t1').join(' · '))+'</td><td>'+eh(m.t1_games)+'</td><td>'+eh(obrSideNames(m,'t2').join(' · '))+'</td><td>'+eh(m.t2_games)+'</td><td>'+eh(Math.max(m.t1_sets||0,m.t2_sets||0))+'</td><td>'+eh(m.ends||'')+'</td><td>'+eh(m.submitted_by||'')+'</td></tr>'; });
   t+='</tbody></table>';
   box.innerHTML=t;
   printTable('admPrintBox','Matches — selected');
@@ -1405,12 +1410,13 @@ function adminEditMatch(id){
   const fld='width:100%;padding:8px;border:1.5px solid rgba(15,110,86,.22);border-radius:7px;font-size:13px;margin-bottom:7px;box-sizing:border-box;';
   box.innerHTML='<div class="ac-card" style="border:1.5px solid #12855F;"><h4>Edit match</h4>'
     + '<label style="font-size:11px;color:#5aa98d;">Date (yyyy-mm-dd)</label><input id="emDate" value="'+m.match_date+'" style="'+fld+'">'
-    + '<label style="font-size:11px;color:#5aa98d;">Event</label><input id="emEvent" value="'+(m.event||'Social').replace(/"/g,'&quot;')+'" style="'+fld+'">'
-    + '<div style="font-size:12px;margin:4px 0;">'+sideName(m.t1p1,m.t1p2,' &amp; ')+'</div>'
-    + '<div class="ac-row"><input id="emT1s" type="number" value="'+m.t1_sets+'" placeholder="sets" style="'+fld+'"><input id="emT1g" type="number" value="'+m.t1_games+'" placeholder="games" style="'+fld+'"></div>'
-    + '<div style="font-size:12px;margin:4px 0;">'+sideName(m.t2p1,m.t2p2,' &amp; ')+'</div>'
-    + '<div class="ac-row"><input id="emT2s" type="number" value="'+m.t2_sets+'" placeholder="sets" style="'+fld+'"><input id="emT2g" type="number" value="'+m.t2_games+'" placeholder="games" style="'+fld+'"></div>'
-    + '<label style="font-size:11px;color:#5aa98d;">Set scores (e.g. 6-4,6-3)</label><input id="emSet" value="'+(m.set_scores||'').replace(/"/g,'&quot;')+'" style="'+fld+'">'
+    + '<label style="font-size:11px;color:#5aa98d;">Class / event</label><input id="emEvent" value="'+(m.event||'Tabs-in').replace(/"/g,'&quot;')+'" style="'+fld+'">'
+    + '<div style="font-size:12px;margin:4px 0;"><b>Side A</b> · '+obrSideNames(m,'t1').join(' · ')+'</div>'
+    + '<div class="ac-row"><input id="emT1s" type="number" value="'+m.t1_sets+'" placeholder="weight (0/1/2/3)" style="'+fld+'"><input id="emT1g" type="number" value="'+m.t1_games+'" placeholder="shots" style="'+fld+'"></div>'
+    + '<div style="font-size:12px;margin:4px 0;"><b>Side B</b> · '+obrSideNames(m,'t2').join(' · ')+'</div>'
+    + '<div class="ac-row"><input id="emT2s" type="number" value="'+m.t2_sets+'" placeholder="weight (0/1/2/3)" style="'+fld+'"><input id="emT2g" type="number" value="'+m.t2_games+'" placeholder="shots" style="'+fld+'"></div>'
+    + '<div style="font-size:11px;color:#7a6688;margin:-2px 0 6px;">Weight: winner carries it (3 full comp · 2 shortened · 1 tabs-in/short · 0 roll-up), loser 0; a peel has both sides equal.</div>'
+    + '<label style="font-size:11px;color:#5aa98d;">Note (optional)</label><input id="emSet" value="'+(m.set_scores||'').replace(/"/g,'&quot;')+'" style="'+fld+'">'
     + '<button class="ac-btn ac-btn-primary" style="width:100%;" onclick="adminSaveMatch('+id+')">Save changes</button>'
     + '<button class="ac-btn ac-btn-ghost" style="width:100%;margin-top:6px;" onclick="adminLoadMatches()">Cancel</button>'
     + '<div id="emMsg" class="ac-msg"></div></div>';
@@ -1750,7 +1756,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.07-26";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.07-28";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
@@ -1769,7 +1775,7 @@ function ladderNoteHTML(){
       + 'background:rgba(15,110,86,.07);border:1px solid rgba(15,110,86,.35);border-top:none;border-left:none;'
       + 'font-size:13px;font-weight:500;color:#0d4a38;line-height:1.6;">'
       + 'A rating is <strong>not only</strong> based on who won — it is a combination of '
-      + '<strong>sets played</strong>, the <strong>opponent\'s strength</strong>, the '
+      + '<strong>matches played</strong>, the <strong>opponent\'s strength</strong>, the '
       + '<strong>expected vs actual result</strong>, and the <strong>margin of win or loss</strong>.'
       + '<div style="margin-top:8px;font-weight:600;color:#12855F;">Tap any player for their story.</div>'
     + '</div></div>';
@@ -2171,9 +2177,9 @@ async function renderTournamentButtons(){
   // show the classic four doubles divisions so nothing regresses.
   if(divs.length===0) divs=["Men's Singles","Ladies Singles","Men's","Ladies","Mixed","All Sorts"];
   const label=(d)=>{
-    if(d==="Men's") return "Men's Doubles";
-    if(d==="Ladies") return "Ladies Doubles";
-    if(d==="Mixed") return "Mixed Doubles";
+    if(d==="Men's") return "Men's (team)";
+    if(d==="Ladies") return "Ladies (team)";
+    if(d==="Mixed") return "Mixed (team)";
     return d; // "All Sorts","Men's Singles","Ladies Singles" read fine
   };
   const anyDoubles = divs.some(d=>!/singles/i.test(d));
@@ -2250,7 +2256,7 @@ async function loadTournament(category, title) {
     data.forEach(p=>{ (((p.sets||0)>=STATS_MIN && p.set_win_pct!=null) ? q : u).push(p); });
     q.sort(byPerf); u.sort(byPerf);
     let html='<div style="padding:10px 14px;background:rgba(15,110,86,.08);border:1px solid rgba(15,110,86,.30);border-radius:10px;margin:0 0 12px;font-size:12px;color:#0d4a38;line-height:1.5;"><strong>Tournament Performance Stats</strong> — how each entry performed during the event. This is not the final placing; the winner is decided by the final.</div>';
-    html+=`<table class="ladder-table"><thead><tr><th>Rank</th><th>${nameHdr}</th><th>% Won</th><th>Sets</th><th>Won</th><th>${ratingHdr}</th><th>Level</th></tr></thead><tbody>`;
+    html+=`<table class="ladder-table"><thead><tr><th>Rank</th><th>${nameHdr}</th><th>% Won</th><th>Wt played</th><th>Wt won</th><th>${ratingHdr}</th><th>Level</th></tr></thead><tbody>`;
     const rowFor=(p,rankCell,rowStyle)=>{
       const rating = isSingles ? Math.round(p.combined) : (usesCombined ? Math.round(p.combined) : Math.round(p.weighted));
       const swp = p.set_win_pct==null?'—':Number(p.set_win_pct).toFixed(1);
@@ -2286,7 +2292,7 @@ async function loadTournamentForm(category, title) {
     const uf = (data||[]).filter(p=>!(p.team_form!=null && (p.sets||0)>=TFORM_MIN));
     qf.sort((a,b)=>(b.team_form-a.team_form)||((b.set_win_pct||0)-(a.set_win_pct||0))||((b.game_diff_per_set||0)-(a.game_diff_per_set||0))||((b.sets_won||0)-(a.sets_won||0)));
     uf.sort((a,b)=>((b.set_win_pct||0)-(a.set_win_pct||0))||((b.sets_won||0)-(a.sets_won||0)));
-    let html='<table class="ladder-table"><thead><tr><th>'+nameHdr+'</th><th>Sets</th><th>Sets Won</th><th>Win %</th><th>Game Diff/Set</th><th>Form</th></tr></thead><tbody>';
+    let html='<table class="ladder-table"><thead><tr><th>'+nameHdr+'</th><th>Wt played</th><th>Wt won</th><th>Win %</th><th>Net shots / wt</th><th>Form</th></tr></thead><tbody>';
     const frow=(p,style)=>{
       const winpct = p.set_win_pct==null?'—':Number(p.set_win_pct).toFixed(1);
       const gdps = p.game_diff_per_set==null?'—':Number(p.game_diff_per_set).toFixed(2);
@@ -2466,7 +2472,7 @@ async function loadProfileIndividual(name, gender) {
       <div id="chartSnap" style="display:none;background:#eef6f2;border-radius:12px;padding:14px;margin-bottom:14px;">
         <div style="font-weight:800;color:#0d4a38;font-size:15px;text-align:center;margin-bottom:2px;">Overall Performance</div>
         <div style="font-size:10px;color:#4a6358;text-align:center;margin-bottom:10px;line-height:1.5;">
-          <b>Win %</b> sets won · <b>Scrap</b> winning, esp. close · <b>Compose</b> few close losses · <b>Opp Str</b> strength of opponents · <b>Active</b> matches vs club average · <b>Pt Eff</b> game margin per set
+          <b>Win %</b> matches won · <b>Scrap</b> winning, esp. close · <b>Compose</b> few close losses · <b>Opp Str</b> strength of opponents · <b>Active</b> matches vs club average · <b>Pt Eff</b> shot margin per match
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:center;">
           <div style="flex:1 1 200px;min-width:180px;text-align:center;">${_radarSVG(_axes)}</div>
@@ -8150,7 +8156,7 @@ function renderStep2(){
     obrSlots(side).map((id,i)=>`<div class="field"><label>${pos[i]}</label>
       <input type="hidden" id="${id}_val" value="${entryData[id]||''}">
       <button type="button" class="btn player-pick${entryData[id]?' selected':''}" id="${id}_btn" onclick="openPlayerModal('${id}','${pos[i]} — ${label}')" style="width:100%;text-align:left;padding:14px;font-size:16px;border:1.5px solid rgba(15,110,86,.3);border-radius:10px;background:#fff;"><span id="${id}_lbl">${entryData[id]||'Tap to pick…'}</span></button>
-      <div id="${id}_rt" style="display:none;margin:-2px 0 8px 2px;"></div></div>`).join('')+`<div id="${side==='t1'?'otrPrev1':'otrPrev2'}" class="pair-preview" style="display:none;background:#fff;border:1.5px solid rgba(15,110,86,.3);border-radius:10px;padding:12px 14px;margin-top:4px;line-height:1.9;"></div></div>`;
+      <div id="${id}_rt" style="display:none;margin:-2px 0 8px 2px;"></div></div>`).join('')+`<div id="${side==='t1'?'otrPrev1':'otrPrev2'}" class="pair-preview" style="display:none;background:#fff;border:1.5px solid rgba(15,110,86,.3);border-radius:10px;padding:10px 14px;margin-top:4px;line-height:1.5;"></div></div>`;
   document.getElementById('entryContent').innerHTML=`
     <p class="sub" style="margin-bottom:10px;">${n===1?'Pick both players.':'Pick each side in playing order — lead first, skip last.'}</p>
     ${card('t1','Side A')}${card('t2','Side B')}
@@ -8622,7 +8628,7 @@ function otrUpdatePreview(){
     ids.forEach((id,i)=>{ const el=document.getElementById(id+'_rt'); if(!el) return; if(names[i]){ el.style.display=''; el.innerHTML=`<span class="amr-chip" style="background:#0F6E56;margin-right:6px;">Rating ${Math.round(R(names[i]))}</span><span class="amr-chip" style="background:#5a6e66;">Lvl ${(R(names[i])/200).toFixed(1)}</span>`; } else el.style.display='none'; });
     const prev=document.getElementById(side==='t1'?'otrPrev1':'otrPrev2'); if(!prev) return;
     if(names.every(Boolean)){ const v=_obrTeamStrength(names.map(R)); strength[side]=v;
-      prev.innerHTML=`<span class="amr-chip" style="background:#D35400;margin-right:6px;">${names.length>1?'Side strength':'Rating'} ${Math.round(v)}</span><span class="amr-chip" style="background:#5a6e66;margin-right:6px;">Lvl ${(v/200).toFixed(1)}</span>`+(names.length>1?`<span class="amr-chip" style="background:#e8f0ec;color:#3a6b5c;">${names.length===2?'60/40':names.length===3?'45/33/22':'40/28/20/12'} strongest-first</span>`:'');
+      prev.innerHTML=`<span style="font-size:15px;color:#333;">${names.length>1?'Side strength':'Rating'} · <span style="color:#D35400;font-weight:800;font-size:18px;">${Math.round(v)}</span> · Lvl ${(v/200).toFixed(1)}</span>`+(names.length>1?`<span style="font-size:12px;color:#5a6e66;margin-left:10px;">${names.length===2?'60/40':names.length===3?'45/33/22':'40/28/20/12'} strongest-first</span>`:'');
       prev.style.display='block'; } else prev.style.display='none';
   });
   const mp=document.getElementById('obrMatchPrev'); if(!mp) return;
