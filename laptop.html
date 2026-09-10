@@ -947,17 +947,20 @@
               </select>
             </div>
             <div id="atDivBlock">
-              <label style="font-size:12px;color:#5aa98d;font-weight:700;">Divisions &amp; team caps</label>
-              <p id="atDivHint" style="font-size:11px;color:#5aa98d;margin:2px 0 8px;">Tick each division this tournament runs. Only ticked divisions appear in stats and entry. Set an optional cap for each (leave blank for no cap).</p>
+              <label style="font-size:12px;color:#5aa98d;font-weight:700;">Format</label>
+              <select id="atMatchFormat" class="ac-field" onchange="atFormatHint()">
+                <option value="singles">Singles (1 v 1)</option>
+                <option value="pairs">Pairs (2 v 2)</option>
+                <option value="triples">Triples (3 v 3)</option>
+                <option value="fours" selected>Fours (4 v 4)</option>
+              </select>
+              <label style="font-size:12px;color:#5aa98d;font-weight:700;">Categories &amp; entry caps</label>
+              <p id="atDivHint" style="font-size:11px;color:#5aa98d;margin:2px 0 8px;">One tournament = one format. Tick each category it runs; each is its own competition, seeded separately. Optional cap per category (blank = no cap).</p>
               <div id="atDivRows">
-                <div style="font-size:11px;color:#7ba392;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin:4px 0 4px;">Singles</div>
-                <div class="at-divrow"><label><input type="checkbox" id="atDivMenSingles" onchange="atSyncCap('MenSingles')"> Men's Singles</label><input id="atCapMenSingles" type="number" min="2" step="1" placeholder="cap" class="ac-capf" disabled></div>
-                <div class="at-divrow"><label><input type="checkbox" id="atDivLadiesSingles" onchange="atSyncCap('LadiesSingles')"> Ladies Singles</label><input id="atCapLadiesSingles" type="number" min="2" step="1" placeholder="cap" class="ac-capf" disabled></div>
-                <div style="font-size:11px;color:#7ba392;font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin:10px 0 4px;">Team events (pairs / triples / fours — format chosen above)</div>
-                <div class="at-divrow"><label><input type="checkbox" id="atDivMen" onchange="atSyncCap('Men')"> Men's</label><input id="atCapMen" type="number" min="4" step="2" placeholder="cap" class="ac-capf" disabled></div>
-                <div class="at-divrow"><label><input type="checkbox" id="atDivLadies" onchange="atSyncCap('Ladies')"> Ladies</label><input id="atCapLadies" type="number" min="4" step="2" placeholder="cap" class="ac-capf" disabled></div>
-                <div class="at-divrow"><label><input type="checkbox" id="atDivMixed" onchange="atSyncCap('Mixed')"> Mixed</label><input id="atCapMixed" type="number" min="4" step="2" placeholder="cap" class="ac-capf" disabled></div>
-                <div class="at-divrow"><label><input type="checkbox" id="atDivAllSorts" onchange="atSyncCap('AllSorts')"> All Sorts</label><input id="atCapAllSorts" type="number" min="4" step="2" placeholder="cap" class="ac-capf" disabled></div>
+                <div class="at-divrow"><label><input type="checkbox" id="atDivMen" onchange="atSyncCap('Men')"> <span class="atCatLbl">Men's</span></label><input id="atCapMen" type="number" min="2" step="1" placeholder="cap" class="ac-capf" disabled></div>
+                <div class="at-divrow"><label><input type="checkbox" id="atDivLadies" onchange="atSyncCap('Ladies')"> <span class="atCatLbl">Ladies</span></label><input id="atCapLadies" type="number" min="2" step="1" placeholder="cap" class="ac-capf" disabled></div>
+                <div class="at-divrow"><label><input type="checkbox" id="atDivMixed" onchange="atSyncCap('Mixed')"> <span class="atCatLbl">Mixed</span></label><input id="atCapMixed" type="number" min="2" step="1" placeholder="cap" class="ac-capf" disabled></div>
+                <div class="at-divrow"><label><input type="checkbox" id="atDivOpen" onchange="atSyncCap('Open')"> <span class="atCatLbl">Open</span></label><input id="atCapOpen" type="number" min="2" step="1" placeholder="cap" class="ac-capf" disabled></div>
               </div>
             </div>
             <div style="margin:10px 0 4px;padding:10px;border:1.5px solid #B9770E;border-radius:9px;background:#fffdf5;">
@@ -1471,14 +1474,16 @@ function atSyncCap(which){
 // All six divisions: form id -> stored division label.
 // NOTE: doubles labels are kept EXACTLY as before ("Men's","Ladies","Mixed","All Sorts")
 // so existing tournaments and the doubles entry path are unaffected. Singles are new labels.
+// BOWLS: categories only; the tournament's match_format (singles|pairs|triples|fours) says how many bowl a side.
+// Division names stored: singles → "<Cat> Singles" (family engine convention); team formats → "<Cat>".
 const AT_DIV_DEFS = [
-  ['MenSingles',    "Men's Singles"],
-  ['LadiesSingles', "Ladies Singles"],
-  ['Men',           "Men's"],
-  ['Ladies',        "Ladies"],
-  ['Mixed',         "Mixed"],
-  ['AllSorts',      "All Sorts"]
+  ['Men',    "Men's"],
+  ['Ladies', "Ladies"],
+  ['Mixed',  "Mixed"],
+  ['Open',   "Open"]
 ];
+const OBR_FMT_WORD={singles:'Singles',pairs:'Pairs',triples:'Triples',fours:'Fours'};
+function atFormatHint(){ const f=(document.getElementById('atMatchFormat')||{}).value||'fours'; document.querySelectorAll('.atCatLbl').forEach(el=>{ const base=el.textContent.replace(/ (Singles|Pairs|Triples|Fours)$/,''); el.textContent=base+' '+OBR_FMT_WORD[f]; }); }
 async function adminCreateTournament(){
   const cid=document.getElementById('adminClubSelect').value;
   const name=document.getElementById('atName').value.trim();
@@ -1486,9 +1491,11 @@ async function adminCreateTournament(){
   const msg=document.getElementById('adminTourMsg');
   if(!name){ msg.innerHTML='<span style="color:#c0392b;">Tournament name required.</span>'; return; }
   const ds=[]; const caps={};
-  AT_DIV_DEFS.forEach(([id,label])=>{
+  const matchFormat=(document.getElementById('atMatchFormat')||{}).value||'fours';
+  AT_DIV_DEFS.forEach(([id,base])=>{
     const cb=document.getElementById('atDiv'+id);
     if(cb && cb.checked){
+      const label = (matchFormat==='singles') ? (base+' Singles') : base;   // engine convention
       ds.push(label);
       const c=document.getElementById('atCap'+id).value;
       if(c) caps[label]=Number(c);
@@ -1501,7 +1508,7 @@ async function adminCreateTournament(){
   if(isHandicap && type!=='internal'){ msg.innerHTML='<span style="color:#c0392b;">A handicap event must be an <b>internal</b> tournament (the system runs the draw to set the handicaps).</span>'; return; }
   const divisions = ds.join(',');
   const fmt = (document.getElementById('atFormat') && type==='internal') ? document.getElementById('atFormat').value : 'divisional';
-  const r=await adminCall('create_tournament',{ club_id:Number(cid), name, type, format:fmt, divisions, caps:Object.keys(caps).length?JSON.stringify(caps):null, handicap:isHandicap });
+  const r=await adminCall('create_tournament',{ club_id:Number(cid), name, type, format:fmt, match_format:matchFormat, divisions, caps:Object.keys(caps).length?JSON.stringify(caps):null, handicap:isHandicap });
   if(!r.ok){ msg.innerHTML='<span style="color:#c0392b;">'+r.error+'</span>'; return; }
   // Set the handicap flag through the tournament function we control (the admin create may
   // not know the column). Uses the master/club admin PIN. Best-effort but reported if it fails.
@@ -1756,7 +1763,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.07-28";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.09-29";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
@@ -3092,7 +3099,7 @@ async function toggleHandicapGlimpse(){
     async function teamName(tour, div, seed){
       const key = tour+'|'+div;
       if(!nameCache[key]){
-        const ents = await sbGet(`obr_tournament_entries?select=seed,p1,p2&club_id=eq.${CLUB_ID}&tournament=eq.${encodeURIComponent(tour)}&category=eq.${encodeURIComponent(div)}`) || [];
+        const ents = await sbGet(`obr_tournament_entries?select=seed,p1,p2,p3,p4&club_id=eq.${CLUB_ID}&tournament=eq.${encodeURIComponent(tour)}&category=eq.${encodeURIComponent(div)}`) || [];
         const m={}; ents.forEach(e=>{ m[e.seed]= e.p2 ? (e.p1+' / '+e.p2) : e.p1; }); nameCache[key]=m;
       }
       return nameCache[key][seed] || ('Seed '+seed);
@@ -3729,7 +3736,7 @@ async function _submitMatchInner(){
       const _tr = await sbGet(`obr_tournaments?select=type&name=eq.${encodeURIComponent(ev)}&club_id=eq.${CLUB_ID}&limit=1`);
       _tType = (_tr && _tr.length) ? _tr[0].type : null;
       if(_tType==='internal'){
-        _tEnts = await sbGet(`obr_tournament_entries?select=seed,p1,p2&tournament=eq.${encodeURIComponent(ev)}&category=eq.${encodeURIComponent(_mDiv)}&club_id=eq.${CLUB_ID}`) || [];
+        _tEnts = await sbGet(`obr_tournament_entries?select=seed,p1,p2,p3,p4&tournament=eq.${encodeURIComponent(ev)}&category=eq.${encodeURIComponent(_mDiv)}&club_id=eq.${CLUB_ID}`) || [];
       }
     }catch(e){}
   }
@@ -3874,7 +3881,7 @@ async function routeHandicapEntry(ed, err, btn){
   const t2key = teamKey(ed.t2p1, ed.t2p2);
   let entries, fixtures;
   try{
-    entries  = await sbGet(`obr_tournament_entries?select=seed,p1,p2&club_id=${'eq.'+CLUB_ID}&tournament=eq.${encodeURIComponent(tour)}&category=eq.${encodeURIComponent(div)}`) || [];
+    entries  = await sbGet(`obr_tournament_entries?select=seed,p1,p2,p3,p4&club_id=${'eq.'+CLUB_ID}&tournament=eq.${encodeURIComponent(tour)}&category=eq.${encodeURIComponent(div)}`) || [];
     fixtures = await sbGet(`obr_tournament_fixtures?select=id,round,seed_a,seed_b,sets_a&club_id=${'eq.'+CLUB_ID}&tournament=eq.${encodeURIComponent(tour)}&division=eq.${encodeURIComponent(div)}`) || [];
   }catch(e){ return done('<strong>⚠️ Could not load the handicap draw.</strong><br>Please try again, or enter this result on the tournament\'s Rounds tab.', false); }
   if(!entries.length || !fixtures.length){
@@ -5279,17 +5286,18 @@ const TM = (function () {
 })();
 
 // SINGLES-AWARE team-name helper: "A / B" for doubles, just "A" for singles (p2 null/empty).
-function tmTeamName(p1, p2){ return (p2==null || p2==='') ? (p1||'') : (p1 + ' / ' + p2); }
+function tmTeamName(p1, p2, p3, p4){ return [p1,p2,p3,p4].filter(x=>x!=null && x!=='').join(' · '); }
 // True when a division/category is singles (name carries "Singles").
 function tmIsSingles(cat){ return typeof cat==='string' && /singles/i.test(cat); }
 // Display-only division label. The STORED label stays exactly as-is ("Ladies","Men's")
 // so existing data/queries are unaffected; this only makes the UI read properly.
 function tmDivLabel(d){
-  if(d==="Men's") return "Men's Doubles";
-  if(d==='Ladies') return 'Ladies Doubles';
-  if(d==='Mixed') return 'Mixed Doubles';
-  return d; // "Men's Singles","Ladies Singles","All Sorts" already read fine
+  if(/singles/i.test(d)) return d;
+  const f=window._etMatchFormat||'fours'; return d+' '+(OBR_FMT_WORD[f]||'');
 }
+const OBR_TM_SLOTS={singles:1,pairs:2,triples:3,fours:4};
+function etSlots(){ const cat=(document.getElementById('etCat')||{}).value||''; if(tmIsSingles(cat)) return 1; return OBR_TM_SLOTS[window._etMatchFormat||'fours']||4; }
+function etVals(){ const n=etSlots(); return Array.from({length:n},(_,i)=>((document.getElementById('etP'+(i+1))||{}).value||'').trim()); }
 
 // ============================================================================
 // KNOCKOUT + PLATE draw engine (singles & doubles). Seeds 1..N already ordered.
@@ -5441,7 +5449,7 @@ async function loadTournamentSheet(tournament, division) {
   window._tmAllFixtures = fixtures;
   window._tmComputeMain = computeMainBracket;   // expose for tmEnsureBracketFixtures
   window._tmComputePlate = computePlateBracket;
-  window._tmSeedNames = {}; entries.forEach(e=>{ window._tmSeedNames[e.seed] = tmTeamName(e.p1, e.p2); });
+  window._tmSeedNames = {}; entries.forEach(e=>{ window._tmSeedNames[e.seed] = tmTeamName(e.p1, e.p2, e.p3, e.p4); });
 
   // division selector pills (only divisions that have entries)
   let divBar = '<div class="tm-divbar">';
@@ -5451,7 +5459,7 @@ async function loadTournamentSheet(tournament, division) {
   const N = entries.length;
   const BANDS = TM.makeBands(N);
   const bySeed = {}; entries.forEach(e => bySeed[e.seed] = e);
-  const tName = s => (s===0) ? 'BYE' : (bySeed[s] ? tmTeamName(bySeed[s].p1, bySeed[s].p2) : ('Seed ' + s));
+  const tName = s => (s===0) ? 'BYE' : (bySeed[s] ? tmTeamName(bySeed[s].p1, bySeed[s].p2, bySeed[s].p3, bySeed[s].p4) : ('Seed ' + s));
   // Round-aware name: a PERMANENT substitution shows the replacement player(s) on fixtures
   // at/after sub_from_round, and the ORIGINAL(s) on earlier ones. Supports replacing P1 only,
   // P2 only, or BOTH (whole-team takeover). Past results are never relabelled (forward-only).
@@ -5459,13 +5467,11 @@ async function loadTournamentSheet(tournament, division) {
     if(s===0) return 'BYE';
     const e = bySeed[s];
     if(!e) return 'Seed ' + s;
-    const active = e.sub_from_round!=null && round!=null && round >= e.sub_from_round && (e.sub_p1 || e.sub_p2);
+    const active = e.sub_from_round!=null && round!=null && round >= e.sub_from_round && (e.sub_p1 || e.sub_p2 || e.sub_p3 || e.sub_p4);
     if(active){
-      const p1 = e.sub_p1 || e.p1;
-      const p2 = (e.p2!=null) ? (e.sub_p2 || e.p2) : e.p2;
-      return tmTeamName(p1, p2);
+      return tmTeamName(e.sub_p1 || e.p1, (e.p2!=null ? (e.sub_p2 || e.p2) : e.p2), (e.p3!=null ? (e.sub_p3 || e.p3) : e.p3), (e.p4!=null ? (e.sub_p4 || e.p4) : e.p4));
     }
-    return tmTeamName(e.p1, e.p2);
+    return tmTeamName(e.p1, e.p2, e.p3, e.p4);
   };
 
   // Per-fixture handicap (for handicap events). Uses the two teams' frozen seed_rating
@@ -5569,8 +5575,8 @@ async function loadTournamentSheet(tournament, division) {
     // Render one team row for a given seed. Shared by the flat and the grouped layouts.
     const teamRowHTML = (s) => {
       const e = bySeed[s];
-      const hasSub = e && e.sub_from_round!=null && (e.sub_p1 || e.sub_p2);
-      const subName = hasSub ? tmTeamName(e.sub_p1 || e.p1, (e.p2!=null ? (e.sub_p2 || e.p2) : e.p2)) : '';
+      const hasSub = e && e.sub_from_round!=null && (e.sub_p1 || e.sub_p2 || e.sub_p3 || e.sub_p4);
+      const subName = hasSub ? tmTeamName(e.sub_p1 || e.p1, (e.p2!=null ? (e.sub_p2 || e.p2) : e.p2), (e.p3!=null ? (e.sub_p3 || e.p3) : e.p3), (e.p4!=null ? (e.sub_p4 || e.p4) : e.p4)) : '';
       let r = '<tr><td class="num"><span class="seed' + (s === 1 ? ' s1' : '') + '">' + s + '</span></td>'
         + '<td><b>' + tName(s) + '</b>'
         + (hasSub ? ('<div style="font-size:11px;color:#B9770E;margin-top:2px;">→ ' + subName + ' from R' + e.sub_from_round + '</div>') : '')
@@ -6313,7 +6319,7 @@ async function loadTournamentSheet(tournament, division) {
     const e = bySeed[seed];
     if(!e){ alert('Team not found.'); return; }
     if(e.p2==null){ alert('This is a singles entrant — no partner to replace.'); return; }
-    const cur = tmTeamName(e.p1, e.p2);
+    const cur = tmTeamName(e.p1, e.p2, e.p3, e.p4);
     const fromRound = tmNextUnplayedRound(seed);
     if(fromRound==null){ alert(cur+' has no remaining unplayed matches — nothing to substitute forward.'); return; }
     // which player is being replaced?
@@ -6352,7 +6358,7 @@ async function loadTournamentSheet(tournament, division) {
     const e = bySeed[seed];
     if(!e){ alert('Team not found.'); return; }
     if(e.p2==null){ alert('This is a singles entrant — use ✎ sub to replace the player.'); return; }
-    const cur = tmTeamName(e.p1, e.p2);
+    const cur = tmTeamName(e.p1, e.p2, e.p3, e.p4);
     const played = tmHasPlayed(seed);
     const fromRound = tmNextUnplayedRound(seed);
     if(fromRound==null && played){ alert(cur+' has already played all their matches — nothing left to hand over.'); return; }
@@ -6825,8 +6831,9 @@ async function renderEnterScreen(){
   // tournament config: allowed divisions + per-division caps
   let allowedDivs = ["Men's","Ladies","Mixed"]; let caps = {};
   try{
-    const trow = await sbGet(`obr_tournaments?select=divisions,caps,format&name=eq.${encodeURIComponent(tournament)}&club_id=eq.${CLUB_ID}&limit=1`);
+    const trow = await sbGet(`obr_tournaments?select=divisions,caps,format,match_format&name=eq.${encodeURIComponent(tournament)}&club_id=eq.${CLUB_ID}&limit=1`);
     if(trow && trow.length){
+      window._etMatchFormat = (trow[0].match_format||'fours').toLowerCase()==='doubles' ? 'pairs' : (trow[0].match_format||'fours').toLowerCase();
       if(trow[0].divisions) allowedDivs = trow[0].divisions.split(',').map(s=>s.trim());
       if(trow[0].caps){ try{ caps = JSON.parse(trow[0].caps); }catch(_){ caps={}; } }
       window._etTourFormat = (trow[0].format==='knockout') ? 'knockout' : (trow[0].format==='round_robin' ? 'round_robin' : 'swiss');
@@ -6838,7 +6845,7 @@ async function renderEnterScreen(){
   const allEntries = await tmLoadEntries(tournament);
   const byDiv = {}; allEntries.forEach(e=>{ (byDiv[e.category]=byDiv[e.category]||[]).push(e); });
   // canonical division order INCLUDING singles; then append any present category not listed.
-  const CANON = ["Men's Singles","Ladies Singles","Men's","Ladies","Mixed","All Sorts"];
+  const CANON = ["Men's Singles","Ladies Singles","Mixed Singles","Open Singles","Men's","Ladies","Mixed","Open"];
   const order = CANON.slice();
   Object.keys(byDiv).forEach(c=>{ if(order.indexOf(c)<0) order.push(c); });
   // names already used per division (for dedupe in the picker)
@@ -6878,10 +6885,9 @@ async function renderEnterScreen(){
   let entryCard = '<div class="card"><h2>'+(tmIsSingles(cat)?'Enter a player':'Enter a team')+' <span class="tm-divtag">'+cat+'</span></h2>';
   if(tmIsSingles(cat)){
     entryCard += '<p class="sub">Pick a player for the '+cat+' division. Each division is its own competition, seeded separately.</p>';
-  } else if(cat==='All Sorts'){
-    entryCard += '<p class="sub">All Sorts — any two players, any combination. Seeded by weighted rating.</p>';
   } else {
-    entryCard += '<p class="sub">Pick two players for the '+cat+' division. Each division is its own competition, seeded separately.</p>';
+    const _n=OBR_TM_SLOTS[window._etMatchFormat||'fours']||4;
+    entryCard += '<p class="sub">Pick the '+_n+' bowlers of this '+(window._etMatchFormat||'fours').replace(/s$/,'')+' — in playing order, lead first, skip last. Seeded by derived team strength.</p>';
   }
   entryCard += '<input type="hidden" id="etTour" value="' + tournament.replace(/"/g,'&quot;') + '">'
     + '<input type="hidden" id="etCat" value="'+cat.replace(/"/g,'&quot;')+'">';
@@ -6891,13 +6897,13 @@ async function renderEnterScreen(){
     entryCard += '<p class="sub" style="color:#c0392b;">' + cat + ' has reached its cap of ' + cap + ' teams — entry closed. An admin can raise the cap.</p>';
   } else {
     const _entSingles = tmIsSingles(cat);
-    entryCard += '<label style="font-size:12px;color:#6b6b76;">'+(_entSingles?'Player':'Player 1')+'</label>'
-      + '<input type="hidden" id="etP1">'
-      + '<button type="button" class="name-pick-btn" id="etP1btn" onclick="etPick(1)">— select —</button>'
-      + (_entSingles ? '' :
-          ('<label style="font-size:12px;color:#6b6b76;">Player 2</label>'
-           + '<input type="hidden" id="etP2">'
-           + '<button type="button" class="name-pick-btn" id="etP2btn" onclick="etPick(2)">— select —</button>'))
+    const _n=_entSingles?1:(OBR_TM_SLOTS[window._etMatchFormat||'fours']||4);
+    const _pos={1:['Player'],2:['Lead','Skip'],3:['Lead','Second','Skip'],4:['Lead','Second','Third','Skip']}[_n];
+    for(let k=1;k<=_n;k++){
+      entryCard += '<label style="font-size:12px;color:#6b6b76;">'+_pos[k-1]+'</label>'
+        + '<input type="hidden" id="etP'+k+'">'
+        + '<button type="button" class="name-pick-btn" id="etP'+k+'btn" onclick="etPick('+k+')">— select —</button>';
+    }
       + '<div id="etSeedPrev" class="sub" style="margin:8px 0;"></div>'
       + '<button class="ac-btn ac-btn-green" style="width:100%;" onclick="submitTournamentEntry()">'+(tmIsSingles(cat)?'Add player':'Add team')+'</button>'
       + (tmIsSingles(cat)
@@ -6924,7 +6930,7 @@ async function renderEnterScreen(){
       listCard += '<table style="margin-bottom:12px;"><thead><tr><th class="num">Seed</th><th>'+(_sg?'Player':'Team')+'</th><th class="num">Rating</th><th></th></tr></thead><tbody>';
       seeded.forEach((e,i)=> {
         const rm = dl ? '' : '<button onclick="etRemoveTeam('+e.id+')" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:16px;" title="Remove">×</button>';
-        listCard += '<tr><td class="num"><span class="seed' + (i===0?' s1':'') + '">' + (i+1) + '</span></td><td><b>' + tmTeamName(e.p1, e.p2) + '</b></td><td class="num">' + Math.round(e.seed_rating) + '</td><td class="num">'+rm+'</td></tr>';
+        listCard += '<tr><td class="num"><span class="seed' + (i===0?' s1':'') + '">' + (i+1) + '</span></td><td><b>' + tmTeamName(e.p1, e.p2, e.p3, e.p4) + '</b></td><td class="num">' + Math.round(e.seed_rating) + '</td><td class="num">'+rm+'</td></tr>';
       });
       listCard += '</tbody></table>';
     });
@@ -7212,24 +7218,12 @@ function etSetDivRounds(d, v, key){
 
 function etUpdateSeedPreview(){
   const prev = document.getElementById('etSeedPrev'); if(!prev) return;
-  const p1 = document.getElementById('etP1').value;
-  const p2El = document.getElementById('etP2'); const p2 = p2El ? p2El.value : '';
-  const cat = document.getElementById('etCat').value;
-  const singles = tmIsSingles(cat);
-  if(singles){
-    if(!p1){ prev.innerHTML=''; return; }
-    prev.innerHTML = 'Reading rating…';
-    TM.readCurrentRating(p1).then(a=>{
-      if(a==null){ prev.innerHTML='<span style="color:#B9770E;">This player has no published rating yet.</span>'; return; }
-      prev.innerHTML = 'Seed rating: <b>' + Math.round(a) + '</b> (' + p1 + '\'s own rating)';
-    });
-    return;
-  }
-  if(!p1 || !p2 || p1===p2){ prev.innerHTML=''; return; }
+  const vals = etVals(); if(!vals.every(Boolean)){ prev.innerHTML=''; return; }
   prev.innerHTML = 'Reading ratings…';
-  Promise.all([TM.readCurrentRating(p1), TM.readCurrentRating(p2)]).then(([a,b])=>{
-    if(a==null||b==null){ prev.innerHTML='<span style="color:#B9770E;">One of these players has no published rating yet.</span>'; return; }
-    prev.innerHTML = 'Seed rating: <b>' + Math.round(TM.pairRating(a,b,cat)) + '</b> (' + (cat==="Men's"||cat==='Ladies'?'average':'weighted') + ' of ' + a + ' &amp; ' + b + ')';
+  Promise.all(vals.map(n=>TM.readCurrentRating(n))).then(rs=>{
+    if(rs.some(r=>r==null)){ prev.innerHTML='<span style="color:#B9770E;">One of these bowlers has no published rating yet.</span>'; return; }
+    const v=_obrTeamStrength(rs.map(Number));
+    prev.innerHTML = (vals.length>1?'Seed (team strength): ':'Seed rating: ')+'<b>'+Math.round(v)+'</b>'+(vals.length>1?' <span style="color:#888;">('+({2:'60/40',3:'45/33/22',4:'40/28/20/12'}[vals.length])+' strongest-first)</span>':'');
   });
 }
 
@@ -7239,39 +7233,15 @@ function etUpdateSeedPreview(){
 function etPick(which){
   const players = window._etPlayers || [];
   const cat = document.getElementById('etCat').value;
-  // SINGLES-SAFE: etP2 does not exist on a singles entry card, so read defensively.
-  // (Reading .value off a missing element threw a TypeError and killed the picker.)
-  const _e1 = document.getElementById('etP1'); const _e2 = document.getElementById('etP2');
-  const _v1 = _e1 ? _e1.value : ''; const _v2 = _e2 ? _e2.value : '';
-  const otherVal = (which===1) ? _v2 : _v1;
-  const thisVal  = (which===1) ? _v1 : _v2;
+  const vals = etVals(); const others = vals.filter((v,i)=>i!==(which-1) && v);
   const usedRaw = (window._etUsedInDiv && window._etUsedInDiv[cat]) ? window._etUsedInDiv[cat] : [];
-  const used = new Set(usedRaw.filter(x=>x)); // drop nulls (singles partner slots)
-  // exclude the partner already chosen, and names already entered in this division
-  let avail = players.filter(p => (p.name!==otherVal) && (!used.has(p.name) || p.name===thisVal));
-  const men = avail.filter(p=>p.gender==='M').map(p=>p.name);
-  const ladies = avail.filter(p=>p.gender==='F').map(p=>p.name);
-  let all = avail.map(p=>p.name);
-  // SAFETY: if everyone got filtered out but the club has players, show the full roster
-  // (prevents a silently-empty picker when gender is unset or the used-list is stale).
-  if(!all.length && players.length){ all = players.map(p=>p.name); }
-  let list;
-  if(tmIsSingles(cat)){
-    // gender from the division name; if that yields nobody (e.g. gender not set on members), show everyone
-    const wantLadies = /ladies|women/i.test(cat);
-    const wantMen = /men/i.test(cat) && !wantLadies;
-    list = wantMen ? men : wantLadies ? ladies : all;
-    if(!list.length) list = all; // never present an empty picker
-  }
-  else if(cat==="Men's"){ list=men; }
-  else if(cat==='Ladies'){ list=ladies; }
-  else if(cat==='Mixed'){
-    // partner gender constrains this slot
-    const partnerIsMan = men.includes(otherVal) || players.some(p=>p.name===otherVal && p.gender==='M');
-    const partnerIsLady = ladies.includes(otherVal) || players.some(p=>p.name===otherVal && p.gender==='F');
-    list = otherVal ? (partnerIsMan? ladies : partnerIsLady? men : all) : all;
-  } else { list=all; } // All Sorts — anyone
-  openNamePicker('Player '+which, list, function(name){
+  const used = new Set(usedRaw.filter(x=>x).concat(others));
+  let avail = players.filter(p => !used.has(p.name));
+  const wantLadies = /ladies|women/i.test(cat), wantMen = /men/i.test(cat) && !wantLadies;
+  let list = wantMen ? avail.filter(p=>p.gender==='M').map(p=>p.name) : wantLadies ? avail.filter(p=>p.gender==='F').map(p=>p.name) : avail.map(p=>p.name);
+  if(!list.length) list = avail.map(p=>p.name);   // never present an empty picker (a Mixed side is any combination)
+  const _pos={1:['Player'],2:['Lead','Skip'],3:['Lead','Second','Skip'],4:['Lead','Second','Third','Skip']}[etSlots()]||['Player'];
+  openNamePicker((_pos[which-1]||('Player '+which)), list, function(name){
     document.getElementById('etP'+which).value = name;
     document.getElementById('etP'+which+'btn').textContent = name;
     document.getElementById('etP'+which+'btn').classList.add('selected');
@@ -7284,26 +7254,22 @@ async function refreshEntryList(tournament) { renderEnterScreen(); }
 async function submitTournamentEntry() {
   const tournament = document.getElementById('etTour').value;
   const category = document.getElementById('etCat').value;
-  const p1 = document.getElementById('etP1').value;
-  const p2El = document.getElementById('etP2'); const p2 = p2El ? p2El.value : '';
   const msg = document.getElementById('etMsg');
-  const singles = tmIsSingles(category);
-  if (!tournament || !p1) { msg.innerHTML = '<span style="color:#c0392b;">Pick a player.</span>'; return; }
-  if (!singles && (!p2 || p1 === p2)) { msg.innerHTML = '<span style="color:#c0392b;">Pick two different players.</span>'; return; }
-
+  const vals = etVals();
+  if (!tournament || vals.some(v=>!v)) { msg.innerHTML = '<span style="color:#c0392b;">Pick every bowler.</span>'; return; }
+  if (new Set(vals).size !== vals.length) { msg.innerHTML = '<span style="color:#c0392b;">A name appears twice.</span>'; return; }
   msg.textContent = 'Reading ratings…';
-  const r1 = await TM.readCurrentRating(p1);
-  const r2 = singles ? null : await TM.readCurrentRating(p2);
-  if (r1 == null || (!singles && r2 == null)) { msg.innerHTML = '<span style="color:#c0392b;">One of these players has no published rating yet.</span>'; return; }
-  const seed_rating = singles ? r1 : TM.pairRating(r1, r2, category);
-
+  const rs = await Promise.all(vals.map(n=>TM.readCurrentRating(n)));
+  if (rs.some(r=>r==null)) { msg.innerHTML = '<span style="color:#c0392b;">One of these bowlers has no published rating yet.</span>'; return; }
+  const seed_rating = _obrTeamStrength(rs.map(Number));
   const resp = await fetch(SB_URL + '/functions/v1/obr_tournament', {
     method: 'POST',
     headers: { apikey: SB_ANON, Authorization: 'Bearer ' + SB_ANON, 'Content-Type': 'application/json' },
     body: JSON.stringify({ action:'enter_team', club_id: CLUB_ID,
-      entry: { tournament, category, p1, p2: (singles ? null : p2), seed_rating } })
+      entry: { tournament, category, p1: vals[0], p2: vals[1]||null, p3: vals[2]||null, p4: vals[3]||null, seed_rating } })
   });
-  if (!resp.ok) { msg.innerHTML = '<span style="color:#c0392b;">Could not save entry (' + resp.status + ').</span>'; return; }
+  const j = await resp.json().catch(()=>({}));
+  if (!resp.ok || (j && j.ok===false)) { msg.innerHTML = '<span style="color:#c0392b;">Could not save entry' + ((j&&j.error)?(': '+j.error):(' ('+resp.status+')')) + '.</span>'; return; }
   renderEnterScreen();
 }
 
