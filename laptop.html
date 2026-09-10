@@ -1763,7 +1763,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.10-30";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.10-31";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
@@ -6850,7 +6850,7 @@ async function renderEnterScreen(){
   Object.keys(byDiv).forEach(c=>{ if(order.indexOf(c)<0) order.push(c); });
   // names already used per division (for dedupe in the picker)
   window._etUsedInDiv = {};
-  allEntries.forEach(e=>{ (window._etUsedInDiv[e.category]=window._etUsedInDiv[e.category]||[]).push(e.p1, e.p2); });
+  allEntries.forEach(e=>{ (window._etUsedInDiv[e.category]=window._etUsedInDiv[e.category]||[]).push(e.p1, e.p2, e.p3, e.p4); });
   const allFixtures = await tmLoadFixtures(tournament); // all divisions
   const lockedDivs = new Set(allFixtures.map(f=>f.division));
   window._etLocked = lockedDivs;
@@ -7142,11 +7142,13 @@ function etGroupSet(d, groups, mode){
 // Uses the SAME eligibility rules as the single picker (gender by division name,
 // excludes anyone already entered in this division), and the SAME save path
 // (enter_team), one call per player so each gets its own frozen seed rating.
-function etBulkPickSingles(){
+async function etBulkPickSingles(){
   const cat = document.getElementById('etCat').value;
   if(!tmIsSingles(cat)) return;
   const players = window._etPlayers || [];
-  const usedRaw = (window._etUsedInDiv && window._etUsedInDiv[cat]) ? window._etUsedInDiv[cat] : [];
+  let usedRaw = [];
+  try{ const ents = await tmLoadEntries(window._etTournament, cat); ents.forEach(e=>usedRaw.push(e.p1,e.p2,e.p3,e.p4)); }
+  catch(e){ usedRaw = (window._etUsedInDiv && window._etUsedInDiv[cat]) ? window._etUsedInDiv[cat] : []; }
   const used = new Set(usedRaw.filter(x=>x));
   let avail = players.filter(p => !used.has(p.name));
   const men = avail.filter(p=>p.gender==='M').map(p=>p.name);
@@ -7230,11 +7232,14 @@ function etUpdateSeedPreview(){
 // Fill the two player dropdowns based on category + gender rules (mirrors score entry).
 // Excludes players already entered in THIS division (no double-entry).
 // Build the eligible name list for a tournament-entry slot (gender + dedupe), then open the modal.
-function etPick(which){
+async function etPick(which){
   const players = window._etPlayers || [];
   const cat = document.getElementById('etCat').value;
   const vals = etVals(); const others = vals.filter((v,i)=>i!==(which-1) && v);
-  const usedRaw = (window._etUsedInDiv && window._etUsedInDiv[cat]) ? window._etUsedInDiv[cat] : [];
+  // refresh "already entered" from the live entries so a team added moments ago is excluded now
+  let usedRaw = [];
+  try{ const ents = await tmLoadEntries(window._etTournament, cat); ents.forEach(e=>usedRaw.push(e.p1,e.p2,e.p3,e.p4)); }
+  catch(e){ usedRaw = (window._etUsedInDiv && window._etUsedInDiv[cat]) ? window._etUsedInDiv[cat] : []; }
   const used = new Set(usedRaw.filter(x=>x).concat(others));
   let avail = players.filter(p => !used.has(p.name));
   const wantLadies = /ladies|women/i.test(cat), wantMen = /men/i.test(cat) && !wantLadies;
