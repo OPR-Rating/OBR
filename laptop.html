@@ -1763,7 +1763,7 @@ const _club = CLUBS[_clubParam] || (/^\d+$/.test(_clubParam) ? {id:Number(_clubP
 const CLUB_ID = _club.id;
 document.title = 'OBR · ' + _club.name;
 const CLUB_NAME = _club.name;  // shown in the logo as "OPR · <name>"
-const OPR_VERSION = "OBR-LAPTOP v2026.09.09-29";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
+const OPR_VERSION = "OBR-LAPTOP v2026.09.10-30";  // SINGLES HANDICAP ROUTING: routeHandicapEntry now resolves a singles division as "<Type> Singles" (matching the rated path and the server reconcile), so a singles handicap result finds its draw instead of reporting "No draw found". Doubles unchanged. Includes all prior work.
 // Explanation shown above the individual ladder. Open on load so it's read; collapsible
 // (state kept for the session) and scrolls away. Mechanics only — no outcome framing, so
 // members aren't nudged away from playing stronger opponents. Every clause maps to a real
@@ -6904,7 +6904,7 @@ async function renderEnterScreen(){
         + '<input type="hidden" id="etP'+k+'">'
         + '<button type="button" class="name-pick-btn" id="etP'+k+'btn" onclick="etPick('+k+')">— select —</button>';
     }
-      + '<div id="etSeedPrev" class="sub" style="margin:8px 0;"></div>'
+    entryCard += '<div id="etSeedPrev" class="sub" style="margin:8px 0;"></div>'
       + '<button class="ac-btn ac-btn-green" style="width:100%;" onclick="submitTournamentEntry()">'+(tmIsSingles(cat)?'Add player':'Add team')+'</button>'
       + (tmIsSingles(cat)
           ? '<button class="ac-btn ac-btn-ghost" style="width:100%;margin-top:8px;" onclick="etBulkPickSingles()">➕ Add several players at once</button>'
